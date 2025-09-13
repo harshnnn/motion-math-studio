@@ -1,11 +1,81 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import HeroDemo from "@/components/HeroDemo";
 import FeatureCard from "@/components/FeatureCard";
 import PricingStrip from "@/components/PricingStrip";
+import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    budget: '',
+    description: ''
+  });
+
+  const handleQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (user) {
+        // If user is logged in, create a project
+        const { error } = await supabase.from('projects').insert({
+          user_id: user.id,
+          title: 'Quick Request',
+          description: formData.description,
+          animation_type: 'formula_basic',
+          budget_min: parseInt(formData.budget.split('-')[0].replace('$', '')) || 50,
+          budget_max: parseInt(formData.budget.split('-')[1]?.replace('$', '')) || 200,
+          status: 'submitted'
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Request submitted!",
+          description: "We'll get back to you within 24 hours.",
+        });
+        
+        // Reset form
+        setFormData({ email: '', budget: '', description: '' });
+      } else {
+        // If not logged in, just save as a quick estimate
+        await supabase.from('quick_estimates').insert({
+          animation_type: 'formula_basic',
+          duration_seconds: 15,
+          complexity_factor: 1.0,
+          estimated_price: 100,
+          email: formData.email
+        });
+
+        toast({
+          title: "Request received!",
+          description: "Please sign in to submit a full project request.",
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting request:', error);
+      toast({
+        title: "Error",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
       {/* Hero Section */}
       <section className="relative px-6 py-20 lg:py-32">
         <div className="max-w-7xl mx-auto">
@@ -30,11 +100,11 @@ const Index = () => {
               
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="hero" size="lg" className="text-lg px-8 py-4">
-                  Get an Estimate
+                <Button variant="hero" size="lg" className="text-lg px-8 py-4" asChild>
+                  <a href="/estimate">Get an Estimate</a>
                 </Button>
-                <Button variant="hero-outline" size="lg" className="text-lg px-8 py-4">
-                  Submit Request
+                <Button variant="hero-outline" size="lg" className="text-lg px-8 py-4" asChild>
+                  <a href="/request">Submit Request</a>
                 </Button>
               </div>
               
@@ -133,28 +203,42 @@ const Index = () => {
           </p>
           
           <div className="bg-card border border-border/50 rounded-2xl p-8">
-            <form className="space-y-6">
+            <form onSubmit={handleQuickSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-foreground"
-                />
-                <input
+                {!user && (
+                  <Input
+                    type="email"
+                    placeholder="Your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required={!user}
+                  />
+                )}
+                <Input
                   type="text"
                   placeholder="Budget range (e.g., $50-$200)"
-                  className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-foreground"
+                  value={formData.budget}
+                  onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+                  className={!user ? "" : "md:col-span-2"}
                 />
               </div>
               
-              <textarea
+              <Textarea
                 placeholder="Describe your mathematical concept or provide your script..."
                 rows={4}
-                className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-foreground resize-none"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                required
               />
               
-              <Button variant="hero" size="lg" className="w-full md:w-auto px-12">
-                Submit Quick Request
+              <Button 
+                type="submit" 
+                variant="hero" 
+                size="lg" 
+                className="w-full md:w-auto px-12"
+                disabled={isSubmitting || !formData.description}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Quick Request"}
               </Button>
             </form>
           </div>

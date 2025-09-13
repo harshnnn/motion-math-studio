@@ -14,7 +14,173 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      project_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          project_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          project_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          project_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          animation_type: Database["public"]["Enums"]["animation_type"]
+          budget_max: number | null
+          budget_min: number | null
+          created_at: string
+          deadline: string | null
+          description: string
+          duration_seconds: number | null
+          estimated_price: number | null
+          final_price: number | null
+          id: string
+          notes: string | null
+          reference_materials: string[] | null
+          script_content: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          style_preferences: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animation_type: Database["public"]["Enums"]["animation_type"]
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          deadline?: string | null
+          description: string
+          duration_seconds?: number | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          reference_materials?: string[] | null
+          script_content?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          style_preferences?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animation_type?: Database["public"]["Enums"]["animation_type"]
+          budget_max?: number | null
+          budget_min?: number | null
+          created_at?: string
+          deadline?: string | null
+          description?: string
+          duration_seconds?: number | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          reference_materials?: string[] | null
+          script_content?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          style_preferences?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quick_estimates: {
+        Row: {
+          animation_type: Database["public"]["Enums"]["animation_type"]
+          complexity_factor: number
+          created_at: string
+          duration_seconds: number
+          email: string | null
+          estimated_price: number
+          id: string
+        }
+        Insert: {
+          animation_type: Database["public"]["Enums"]["animation_type"]
+          complexity_factor?: number
+          created_at?: string
+          duration_seconds: number
+          email?: string | null
+          estimated_price: number
+          id?: string
+        }
+        Update: {
+          animation_type?: Database["public"]["Enums"]["animation_type"]
+          complexity_factor?: number
+          created_at?: string
+          duration_seconds?: number
+          email?: string | null
+          estimated_price?: number
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +189,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      animation_type:
+        | "formula_basic"
+        | "formula_advanced"
+        | "math_objects_3d"
+        | "research_full"
+      project_status:
+        | "draft"
+        | "submitted"
+        | "quoted"
+        | "approved"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +328,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      animation_type: [
+        "formula_basic",
+        "formula_advanced",
+        "math_objects_3d",
+        "research_full",
+      ],
+      project_status: [
+        "draft",
+        "submitted",
+        "quoted",
+        "approved",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+    },
   },
 } as const
