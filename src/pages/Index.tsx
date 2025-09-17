@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Link } from "react-router-dom";
 import HeroDemo from "@/components/HeroDemo";
 import FeatureCard from "@/components/FeatureCard";
 import PricingStrip from "@/components/PricingStrip";
@@ -101,10 +102,10 @@ const Index = () => {
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="hero" size="lg" className="text-lg px-8 py-4" asChild>
-                  <a href="/estimate">Get an Estimate</a>
+                  <Link to="/estimate">Get an Estimate</Link>
                 </Button>
                 <Button variant="hero-outline" size="lg" className="text-lg px-8 py-4" asChild>
-                  <a href="/request">Submit Request</a>
+                  <Link to="/request">Submit Request</Link>
                 </Button>
               </div>
               

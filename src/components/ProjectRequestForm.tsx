@@ -89,6 +89,34 @@ const ProjectRequestForm = () => {
       return;
     }
 
+    // Validate required fields
+    if (!projectData.title.trim()) {
+      toast({
+        title: "Missing project title",
+        description: "Please enter a project title.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!projectData.description.trim()) {
+      toast({
+        title: "Missing project description",
+        description: "Please enter a project description.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!projectData.animationType) {
+      toast({
+        title: "Missing animation type",
+        description: "Please select an animation type.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {

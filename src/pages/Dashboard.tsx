@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,7 +114,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <Button asChild className="w-full">
-                <a href="/estimate">Calculate Estimate</a>
+                <Link to="/estimate">Calculate Estimate</Link>
               </Button>
             </CardContent>
           </Card>
@@ -128,7 +128,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <Button asChild className="w-full">
-                <a href="/request">Submit Request</a>
+                <Link to="/request">Submit Request</Link>
               </Button>
             </CardContent>
           </Card>
@@ -149,7 +149,7 @@ const Dashboard = () => {
                   You haven't submitted any projects yet.
                 </p>
                 <Button asChild>
-                  <a href="/request">Submit Your First Project</a>
+                  <Link to="/request">Submit Your First Project</Link>
                 </Button>
               </div>
             ) : (

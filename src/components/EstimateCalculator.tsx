@@ -67,13 +67,21 @@ const EstimateCalculator = () => {
   };
 
   const handleCalculate = async () => {
+    if (!estimateData.animationType) {
+      toast({
+        title: "Please select an animation type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCalculating(true);
     const price = calculateEstimate();
     setEstimatedPrice(price);
 
     // Save estimate to database
     try {
-      await supabase.from('quick_estimates').insert({
+      const { error } = await supabase.from('quick_estimates').insert({
         animation_type: estimateData.animationType,
         duration_seconds: estimateData.duration,
         complexity_factor: estimateData.complexity,
@@ -81,12 +89,22 @@ const EstimateCalculator = () => {
         email: email || null,
       });
 
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
       toast({
         title: "Estimate calculated!",
-        description: `Your estimated price is $${price}`,
+        description: `Your estimated price is $${price}. ${email ? 'We\'ve saved this estimate to your account.' : ''}`,
       });
     } catch (error) {
       console.error('Error saving estimate:', error);
+      toast({
+        title: "Estimate calculated!",
+        description: `Your estimated price is $${price}. (Note: couldn't save to database)`,
+        variant: "destructive",
+      });
     }
 
     setIsCalculating(false);
