@@ -202,6 +202,12 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled"
+        | "under_review"
+        | "rejected"
+        | "negotiation"
+        | "accepted"
+        | "payment_pending"
+        | "under_process"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -343,6 +349,12 @@ export const Constants = {
         "in_progress",
         "completed",
         "cancelled",
+        "under_review",
+        "rejected",
+        "negotiation",
+        "accepted",
+        "payment_pending",
+        "under_process",
       ],
     },
   },

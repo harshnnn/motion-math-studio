@@ -131,7 +131,7 @@ const ProjectRequestForm = () => {
         budget_min: projectData.budgetMin,
         budget_max: projectData.budgetMax,
         deadline: projectData.deadline,
-        status: 'submitted',
+        status: 'under_review',
       });
 
       if (error) throw error;

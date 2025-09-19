@@ -64,25 +64,37 @@ const Dashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'submitted':
-        return 'bg-secondary';
-      case 'quoted':
-        return 'bg-accent';
-      case 'approved':
-        return 'bg-primary';
-      case 'in_progress':
-        return 'bg-blue-500';
+      case 'under_review':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'accepted':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'negotiation':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'payment_pending':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'under_process':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'completed':
-        return 'bg-green-500';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled':
-        return 'bg-destructive';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-muted';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const formatAnimationType = (type: string) => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatStatus = (status: string) => {
+    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const canMakePayment = (status: string) => {
+    return status === 'payment_pending';
   };
 
   return (
@@ -161,9 +173,16 @@ const Dashboard = () => {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-lg">{project.title}</h3>
-                      <Badge className={getStatusColor(project.status)}>
-                        {project.status.replace(/_/g, ' ')}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${getStatusColor(project.status)} border`}>
+                          {formatStatus(project.status)}
+                        </Badge>
+                        {canMakePayment(project.status) && (
+                          <Button size="sm" className="ml-2">
+                            Make Payment
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     
                     <p className="text-muted-foreground mb-2 line-clamp-2">
