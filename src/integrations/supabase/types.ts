@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
@@ -208,6 +241,8 @@ export type Database = {
         | "accepted"
         | "payment_pending"
         | "under_process"
+        | "assigned_to_animator"
+        | "in_revision"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -355,6 +390,8 @@ export const Constants = {
         "accepted",
         "payment_pending",
         "under_process",
+        "assigned_to_animator",
+        "in_revision",
       ],
     },
   },
