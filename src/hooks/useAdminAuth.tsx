@@ -62,7 +62,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           .select('*')
           .eq('username', username)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
