@@ -2,6 +2,21 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Extend Supabase types to include the 'admin_login' RPC
+type AdminLoginParams = {
+  p_username: string;
+  p_password: string;
+};
+
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient {
+    rpc(
+      fn: 'admin_login',
+      params: AdminLoginParams
+    ): Promise<{ data: any; error: any }>;
+  }
+}
+
 interface AdminUser {
   id: string;
   username: string;
@@ -54,44 +69,36 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const signIn = async (username: string, password: string) => {
     try {
       setLoading(true);
-      
-      // Simple check - in production, implement proper hashing
-      if (username === 'admin' && password === 'admin123') {
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('username', username)
-          .eq('is_active', true)
-          .maybeSingle();
 
-        if (error) throw error;
+      const { data, error } = await supabase.rpc('admin_login', {
+        p_username: username,
+        p_password: password
+      });
 
-        // Update last login
-        await supabase
-          .from('admin_users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', data.id);
-
-        const adminUser = {
-          id: data.id,
-          username: data.username,
-          email: data.email,
-          last_login: data.last_login,
-          is_active: data.is_active
-        };
-
-        setAdminUser(adminUser);
-        localStorage.setItem('admin_user', JSON.stringify(adminUser));
-        
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in to admin panel.",
-        });
-
-        return { error: null };
-      } else {
+      if (error) throw error;
+      if (!data || data.length === 0) {
         throw new Error('Invalid credentials');
       }
+
+      const row = data[0];
+
+      const adminUser = {
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        last_login: row.last_login,
+        is_active: true
+      };
+
+      setAdminUser(adminUser);
+      localStorage.setItem('admin_user', JSON.stringify(adminUser));
+
+      toast({
+        title: "Welcome back!",
+        description: "Signed in to admin panel.",
+      });
+
+      return { error: null };
     } catch (error: any) {
       toast({
         title: "Sign in failed",
