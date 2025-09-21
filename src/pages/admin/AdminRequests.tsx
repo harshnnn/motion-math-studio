@@ -56,26 +56,41 @@ const AdminRequests = () => {
   };
 
   const updateProjectStatus = async (projectId: string, newStatus: string) => {
+    // Optimistic snapshot
+    setRequests(prev =>
+      prev.map(r => (r.id === projectId ? { ...r, status: newStatus } : r))
+    );
+
     try {
       const { data, error } = await supabase.rpc('admin_update_project_status', {
         p_id: projectId,
         p_status: newStatus
       });
+
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Update returned no row');
+      }
 
-      setRequests(prev => prev.map(r =>
-        r.id === projectId ? { ...r, status: newStatus } : r
-      ));
+      // Optionally ensure exact status from DB (already optimistic)
+      const returned = data[0];
+      setRequests(prev =>
+        prev.map(r => (r.id === returned.id ? { ...r, status: returned.status } : r))
+      );
 
-      toast({
-        title: "Updated",
-        description: "Status changed successfully",
-      });
-    } catch (error: any) {
-      console.error('Status update error:', error);
+      // Re-fetch to stay in sync (especially if other fields may change later)
+      fetchData();
+
+      toast({ title: "Updated", description: "Status changed successfully" });
+    } catch (err: any) {
+      console.error('Status update error:', err);
+
+      // Revert optimistic change
+      await fetchData();
+
       toast({
         title: "Error",
-        description: error.message || "Failed to update status",
+        description: err.message || "Failed to update status",
         variant: "destructive",
       });
     }
