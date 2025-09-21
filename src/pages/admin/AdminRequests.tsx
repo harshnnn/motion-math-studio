@@ -5,13 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, Edit, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
-interface Project {
+interface RequestRow {
   id: string;
   title: string;
   description: string;
@@ -21,40 +21,33 @@ interface Project {
   user_id: string;
   estimated_price?: number;
   final_price?: number;
-}
-
-interface Profile {
-  user_id: string;
-  full_name: string;
-  email: string;
+  profile_full_name?: string;
+  profile_email?: string;
 }
 
 const AdminRequests = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const { toast } = useToast();
+  const { isAuthenticated } = useAdminAuth();
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) fetchData();
+  }, [isAuthenticated]);
 
   const fetchData = async () => {
     try {
-      const [projectsResponse, profilesResponse] = await Promise.all([
-        supabase.from('projects').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*')
-      ]);
-
-      setProjects(projectsResponse.data || []);
-      setProfiles(profilesResponse.data || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      setLoading(true);
+      const { data, error } = await supabase.rpc('admin_get_requests', {});
+      if (error) throw error;
+      setRequests(data || []);
+    } catch (error: any) {
+      console.error('Error fetching requests:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch requests data",
+        description: error.message || "Failed to fetch requests",
         variant: "destructive",
       });
     } finally {
@@ -64,38 +57,35 @@ const AdminRequests = () => {
 
   const updateProjectStatus = async (projectId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({ status: newStatus as any })
-        .eq('id', projectId);
-
+      const { data, error } = await supabase.rpc('admin_update_project_status', {
+        p_id: projectId,
+        p_status: newStatus
+      });
       if (error) throw error;
 
-      setProjects(prev => prev.map(p => 
-        p.id === projectId ? { ...p, status: newStatus } : p
+      setRequests(prev => prev.map(r =>
+        r.id === projectId ? { ...r, status: newStatus } : r
       ));
 
       toast({
-        title: "Success",
-        description: "Project status updated successfully",
+        title: "Updated",
+        description: "Status changed successfully",
       });
-    } catch (error) {
-      console.error('Error updating status:', error);
+    } catch (error: any) {
+      console.error('Status update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update project status",
+        description: error.message || "Failed to update status",
         variant: "destructive",
       });
     }
   };
 
-  const getClientName = (userId: string) => {
-    const profile = profiles.find(p => p.user_id === userId);
-    return profile?.full_name || profile?.email || 'Unknown Client';
-  };
+  const getClientName = (row: RequestRow) =>
+    row.profile_full_name || row.profile_email || 'Unknown Client';
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string,string> = {
       draft: 'bg-gray-100 text-gray-800',
       under_review: 'bg-yellow-100 text-yellow-800',
       payment_pending: 'bg-orange-100 text-orange-800',
@@ -105,7 +95,7 @@ const AdminRequests = () => {
       completed: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800'
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
@@ -124,21 +114,25 @@ const AdminRequests = () => {
     }
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesFilter = filter === 'all' || project.status === filter;
-    const matchesSearch = project.title.toLowerCase().includes(search.toLowerCase()) ||
-                         project.description.toLowerCase().includes(search.toLowerCase()) ||
-                         getClientName(project.user_id).toLowerCase().includes(search.toLowerCase());
+  const filtered = requests.filter(r => {
+    const matchesFilter = filter === 'all' || r.status === filter;
+    const term = search.toLowerCase();
+    const matchesSearch =
+      r.title.toLowerCase().includes(term) ||
+      r.description.toLowerCase().includes(term) ||
+      getClientName(r).toLowerCase().includes(term);
     return matchesFilter && matchesSearch;
   });
 
-  const formatPrice = (price?: number) => {
-    if (!price) return '-';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price / 100);
-  };
+  const formatPrice = (price?: number) =>
+    price
+      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+          .format(price / 100)
+      : '-';
+
+  if (!isAuthenticated) {
+    return <div className="p-6 text-sm">Unauthorized</div>;
+  }
 
   if (loading) {
     return (
@@ -153,12 +147,9 @@ const AdminRequests = () => {
       <Card>
         <CardHeader>
           <CardTitle>Client Requests</CardTitle>
-          <CardDescription>
-            Manage and track all client project requests
-          </CardDescription>
+          <CardDescription>Manage and track all client project requests</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Input
               placeholder="Search by project, client, or description..."
@@ -183,7 +174,6 @@ const AdminRequests = () => {
             </Select>
           </div>
 
-          {/* Table */}
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -198,111 +188,48 @@ const AdminRequests = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
+                {filtered.map(r => (
+                  <TableRow key={r.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{project.title}</p>
+                        <p className="font-medium">{r.title}</p>
                         <p className="text-sm text-muted-foreground line-clamp-2">
-                          {project.description}
+                          {r.description}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{getClientName(project.user_id)}</TableCell>
+                    <TableCell>{getClientName(r)}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {project.animation_type.replace('_', ' ')}
+                        {r.animation_type.replace('_',' ')}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        {getStatusIcon(project.status)}
-                        <Badge className={getStatusColor(project.status)}>
-                          {project.status.replace('_', ' ')}
+                        {getStatusIcon(r.status)}
+                        <Badge className={getStatusColor(r.status)}>
+                          {r.status.replace('_',' ')}
                         </Badge>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        {project.final_price ? (
-                          <span className="font-medium text-green-600">
-                            {formatPrice(project.final_price)}
-                          </span>
-                        ) : project.estimated_price ? (
-                          <span className="text-muted-foreground">
-                            ~{formatPrice(project.estimated_price)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                        {r.final_price
+                          ? <span className="font-medium text-green-600">{formatPrice(r.final_price)}</span>
+                          : r.estimated_price
+                            ? <span className="text-muted-foreground">~{formatPrice(r.estimated_price)}</span>
+                            : <span className="text-muted-foreground">-</span>}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(r.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>{project.title}</DialogTitle>
-                              <DialogDescription>Complete project details and history</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 max-h-96 overflow-y-auto">
-                              <div>
-                                <h4 className="font-medium mb-2">Project Information</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                  <div>
-                                    <span className="text-muted-foreground">Client:</span>
-                                    <p>{getClientName(project.user_id)}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Type:</span>
-                                    <p>{project.animation_type.replace('_', ' ')}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Status:</span>
-                                    <Badge className={getStatusColor(project.status)}>
-                                      {project.status.replace('_', ' ')}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Created:</span>
-                                    <p>{new Date(project.created_at).toLocaleDateString()}</p>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium mb-2">Description</h4>
-                                <p className="text-sm text-muted-foreground">{project.description}</p>
-                              </div>
-
-                              <div>
-                                <h4 className="font-medium mb-2">Pricing</h4>
-                                <div className="text-sm space-y-1">
-                                  {project.estimated_price && (
-                                    <p>Estimated: {formatPrice(project.estimated_price)}</p>
-                                  )}
-                                  {project.final_price && (
-                                    <p className="font-medium text-green-600">
-                                      Final: {formatPrice(project.final_price)}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Select
-                          value={project.status}
-                          onValueChange={(value) => updateProjectStatus(project.id, value)}
+                          value={r.status}
+                          onValueChange={(value) => updateProjectStatus(r.id, value)}
                         >
                           <SelectTrigger className="w-32">
                             <Edit className="h-4 w-4" />
@@ -323,8 +250,7 @@ const AdminRequests = () => {
                 ))}
               </TableBody>
             </Table>
-
-            {filteredProjects.length === 0 && (
+            {filtered.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No requests found matching your criteria.
               </div>
