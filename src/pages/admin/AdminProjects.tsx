@@ -289,24 +289,9 @@ const AdminProjects = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={project.status}
-                          onValueChange={(v) => handleStatusChange(project, v)}
-                          disabled={updatingId === project.id}
-                        >
-                          <SelectTrigger className={`h-8 w-40 justify-start ${updatingId === project.id ? 'opacity-70' : ''}`}>
-                            <Badge className={statusColors[project.status] || 'bg-gray-100 text-gray-800'}>
+                        <Badge className={statusColors[project.status] || 'bg-gray-100 text-gray-800'}>
                               {formatLabel(project.status)}
                             </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STATUSES.map(s => (
-                              <SelectItem key={s} value={s}>
-                                {formatLabel(s)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
