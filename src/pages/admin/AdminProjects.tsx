@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Eye, Edit, Upload, Download, FileText, DollarSign } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface Project {
   id: string;
@@ -40,11 +41,8 @@ const AdminProjects = () => {
 
   const fetchProjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      setLoading(true);
+      const { data, error } = await supabase.rpc('admin_get_projects', {});
       if (error) throw error;
       setProjects(data || []);
     } catch (error) {
@@ -59,18 +57,26 @@ const AdminProjects = () => {
     }
   };
 
-  const updateProject = async (projectId: string, updates: any) => {
+  const updateProject = async (projectId: string, updates: { final_price?: number; status?: string; notes?: string }) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update(updates)
-        .eq('id', projectId);
-
+      const { data, error } = await supabase.rpc('admin_update_project', {
+        p_id: projectId,
+        p_final_price: updates.final_price ?? null,
+        p_status: updates.status ?? null,
+        p_notes: updates.notes ?? null
+      });
       if (error) throw error;
 
-      setProjects(prev => prev.map(p => 
-        p.id === projectId ? { ...p, ...updates } : p
-      ));
+      if (data && data.length > 0) {
+        const updated = data[0];
+        setProjects(prev => prev.map(p =>
+          p.id === projectId ? { ...p,
+            final_price: updated.final_price,
+            status: updated.status,
+            notes: updated.notes
+          } : p
+        ));
+      }
 
       toast({
         title: "Success",
@@ -88,8 +94,8 @@ const AdminProjects = () => {
 
   const handleSetFinalPrice = () => {
     if (selectedProject && finalPrice) {
-      const priceInCents = parseInt(finalPrice) * 100;
-      updateProject(selectedProject.id, { 
+      const priceInCents = parseInt(finalPrice, 10) * 100;
+      updateProject(selectedProject.id, {
         final_price: priceInCents,
         status: 'payment_pending'
       });
@@ -99,8 +105,8 @@ const AdminProjects = () => {
   };
 
   const handleAddNotes = () => {
-    if (selectedProject && notes) {
-      updateProject(selectedProject.id, { notes });
+    if (selectedProject && notes.trim()) {
+      updateProject(selectedProject.id, { notes: notes.trim() });
       setNotes('');
       setSelectedProject(null);
     }
