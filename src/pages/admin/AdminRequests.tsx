@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, Edit, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -241,9 +242,64 @@ const AdminRequests = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>{project.title}</DialogTitle>
+                              <DialogDescription>Complete project details and history</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              <div>
+                                <h4 className="font-medium mb-2">Project Information</h4>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-muted-foreground">Client:</span>
+                                    <p>{getClientName(project.user_id)}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Type:</span>
+                                    <p>{project.animation_type.replace('_', ' ')}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Status:</span>
+                                    <Badge className={getStatusColor(project.status)}>
+                                      {project.status.replace('_', ' ')}
+                                    </Badge>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Created:</span>
+                                    <p>{new Date(project.created_at).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="font-medium mb-2">Description</h4>
+                                <p className="text-sm text-muted-foreground">{project.description}</p>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Pricing</h4>
+                                <div className="text-sm space-y-1">
+                                  {project.estimated_price && (
+                                    <p>Estimated: {formatPrice(project.estimated_price)}</p>
+                                  )}
+                                  {project.final_price && (
+                                    <p className="font-medium text-green-600">
+                                      Final: {formatPrice(project.final_price)}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
                         <Select
                           value={project.status}
                           onValueChange={(value) => updateProjectStatus(project.id, value)}

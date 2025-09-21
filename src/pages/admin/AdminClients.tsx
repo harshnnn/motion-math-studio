@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Eye, Mail, Phone, Building, Ban, CheckCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
+import ClientMessageForm from '@/components/admin/ClientMessageForm';
 
 interface Client {
   user_id: string;
@@ -285,9 +286,22 @@ const AdminClients = () => {
                             </DialogContent>
                           </Dialog>
                           
-                          <Button variant="outline" size="sm" disabled>
-                            <Mail className="h-4 w-4" />
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Mail className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Send Message</DialogTitle>
+                                <DialogDescription>
+                                  Send a message to {client.full_name || client.email}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <ClientMessageForm client={client} />
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>

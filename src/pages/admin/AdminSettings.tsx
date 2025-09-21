@@ -5,443 +5,410 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { Settings, User, DollarSign, Bell, Shield } from 'lucide-react';
+import PaymentMethodsManager from '@/components/admin/PaymentMethodsManager';
 import { useToast } from '@/hooks/use-toast';
-import { Save, User, Globe, DollarSign, Bell, Shield } from 'lucide-react';
 
 const AdminSettings = () => {
-  const { adminUser } = useAdminAuth();
   const { toast } = useToast();
-  
-  // Admin Profile Settings
-  const [profileSettings, setProfileSettings] = useState({
-    username: adminUser?.username || '',
-    email: adminUser?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+  const [settings, setSettings] = useState({
+    siteName: 'Math in Motion',
+    adminEmail: 'admin@mathinmotion.com',
+    notificationsEnabled: true,
+    autoAssignment: false,
+    emailNotifications: true,
+    projectReminders: true,
+    paymentReminders: true,
+    defaultPricing: {
+      basic2D: 500,
+      advanced2D: 1000,
+      basic3D: 1500,
+      advanced3D: 3000,
+      explainer: 800,
+      whiteboard: 600
+    },
+    businessInfo: {
+      companyName: 'Math in Motion',
+      address: '123 Animation Street, Creative City, CC 12345',
+      phone: '+1 (555) 123-4567',
+      website: 'https://mathinmotion.com',
+      taxId: 'TAX123456789'
+    }
   });
 
-  // Website Configuration
-  const [websiteSettings, setWebsiteSettings] = useState({
-    siteName: 'MathInMotion',
-    tagline: 'Professional Mathematical Animation Services',
-    contactEmail: 'contact@mathinmotion.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Animation Street, Creative City, CC 12345'
-  });
-
-  // Pricing Configuration
-  const [pricingSettings, setPricingSettings] = useState({
-    basicFormulaRate: 150,
-    advancedFormulaRate: 250,
-    mathObjects3DRate: 350,
-    researchFullRate: 500,
-    rushOrderMultiplier: 1.5,
-    bulkDiscountThreshold: 5,
-    bulkDiscountPercentage: 15
-  });
-
-  // Notification Settings
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNewRequests: true,
-    emailPayments: true,
-    emailTeamUpdates: false,
-    browserNotifications: true,
-    dailyReports: true,
-    weeklyReports: false
-  });
-
-  const handleSaveProfile = () => {
-    // In a real app, this would update the admin profile
+  const handleSave = () => {
+    // Save settings logic here
+    console.log('Settings saved:', settings);
     toast({
-      title: "Profile Updated",
-      description: "Your admin profile has been updated successfully.",
+      title: "Settings Saved",
+      description: "Your admin settings have been updated successfully",
     });
   };
 
-  const handleSaveWebsite = () => {
-    // In a real app, this would update website configuration
-    toast({
-      title: "Website Settings Updated",
-      description: "Website configuration has been saved.",
-    });
+  const handlePricingUpdate = (type: string, value: number) => {
+    setSettings(prev => ({
+      ...prev,
+      defaultPricing: {
+        ...prev.defaultPricing,
+        [type]: value
+      }
+    }));
   };
 
-  const handleSavePricing = () => {
-    // In a real app, this would update pricing configuration
-    toast({
-      title: "Pricing Updated",
-      description: "Pricing configuration has been saved.",
-    });
-  };
-
-  const handleSaveNotifications = () => {
-    // In a real app, this would update notification preferences
-    toast({
-      title: "Notifications Updated",
-      description: "Notification preferences have been saved.",
-    });
+  const handleBusinessInfoUpdate = (field: string, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      businessInfo: {
+        ...prev.businessInfo,
+        [field]: value
+      }
+    }));
   };
 
   return (
     <div className="space-y-6">
-      {/* Admin Profile Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
-            <CardTitle>Admin Profile</CardTitle>
-          </div>
-          <CardDescription>
-            Manage your admin account settings and security
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={profileSettings.username}
-                onChange={(e) => setProfileSettings(prev => ({
-                  ...prev,
-                  username: e.target.value
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileSettings.email}
-                onChange={(e) => setProfileSettings(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))}
-              />
-            </div>
-          </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Admin Settings</h1>
+        <Button onClick={handleSave}>Save All Changes</Button>
+      </div>
 
-          <Separator />
-          
-          <div className="space-y-4">
-            <h4 className="text-sm font-medium">Change Password</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={profileSettings.currentPassword}
-                  onChange={(e) => setProfileSettings(prev => ({
-                    ...prev,
-                    currentPassword: e.target.value
-                  }))}
+      <Tabs defaultValue="general" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="business">Business Info</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="payments">Payment Methods</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>General Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Basic website and admin configuration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="siteName">Site Name</Label>
+                  <Input
+                    id="siteName"
+                    value={settings.siteName}
+                    onChange={(e) => setSettings({...settings, siteName: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="adminEmail">Admin Email</Label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={settings.adminEmail}
+                    onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="business">
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Information</CardTitle>
+              <CardDescription>
+                Update your business details and contact information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    value={settings.businessInfo.companyName}
+                    onChange={(e) => handleBusinessInfoUpdate('companyName', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={settings.businessInfo.phone}
+                    onChange={(e) => handleBusinessInfoUpdate('phone', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="address">Business Address</Label>
+                <Textarea
+                  id="address"
+                  value={settings.businessInfo.address}
+                  onChange={(e) => handleBusinessInfoUpdate('address', e.target.value)}
+                  rows={3}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={profileSettings.newPassword}
-                  onChange={(e) => setProfileSettings(prev => ({
-                    ...prev,
-                    newPassword: e.target.value
-                  }))}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={settings.businessInfo.website}
+                    onChange={(e) => handleBusinessInfoUpdate('website', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="taxId">Tax ID</Label>
+                  <Input
+                    id="taxId"
+                    value={settings.businessInfo.taxId}
+                    onChange={(e) => handleBusinessInfoUpdate('taxId', e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pricing">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <DollarSign className="h-5 w-5" />
+                <span>Default Pricing</span>
+              </CardTitle>
+              <CardDescription>
+                Set default pricing for different animation types (per minute)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="basic2D">Basic 2D Animation ($)</Label>
+                  <Input
+                    id="basic2D"
+                    type="number"
+                    value={settings.defaultPricing.basic2D}
+                    onChange={(e) => handlePricingUpdate('basic2D', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="advanced2D">Advanced 2D Animation ($)</Label>
+                  <Input
+                    id="advanced2D"
+                    type="number"
+                    value={settings.defaultPricing.advanced2D}
+                    onChange={(e) => handlePricingUpdate('advanced2D', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="basic3D">Basic 3D Animation ($)</Label>
+                  <Input
+                    id="basic3D"
+                    type="number"
+                    value={settings.defaultPricing.basic3D}
+                    onChange={(e) => handlePricingUpdate('basic3D', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="advanced3D">Advanced 3D Animation ($)</Label>
+                  <Input
+                    id="advanced3D"
+                    type="number"
+                    value={settings.defaultPricing.advanced3D}
+                    onChange={(e) => handlePricingUpdate('advanced3D', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="explainer">Explainer Video ($)</Label>
+                  <Input
+                    id="explainer"
+                    type="number"
+                    value={settings.defaultPricing.explainer}
+                    onChange={(e) => handlePricingUpdate('explainer', Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="whiteboard">Whiteboard Animation ($)</Label>
+                  <Input
+                    id="whiteboard"
+                    type="number"
+                    value={settings.defaultPricing.whiteboard}
+                    onChange={(e) => handlePricingUpdate('whiteboard', Number(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2">Pricing Notes</h4>
+                <p className="text-sm text-muted-foreground">
+                  These are base rates per minute of animation. Final pricing may vary based on complexity, 
+                  timeline, and specific client requirements.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentMethodsManager />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Bell className="h-5 w-5" />
+                <span>Notification Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Configure how and when you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="emailNotifications">Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Receive email notifications for new requests</p>
+                </div>
+                <Switch
+                  id="emailNotifications"
+                  checked={settings.emailNotifications}
+                  onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={profileSettings.confirmPassword}
-                  onChange={(e) => setProfileSettings(prev => ({
-                    ...prev,
-                    confirmPassword: e.target.value
-                  }))}
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="projectReminders">Project Reminders</Label>
+                  <p className="text-sm text-muted-foreground">Get reminders for project deadlines and milestones</p>
+                </div>
+                <Switch
+                  id="projectReminders"
+                  checked={settings.projectReminders}
+                  onCheckedChange={(checked) => setSettings({...settings, projectReminders: checked})}
                 />
               </div>
-            </div>
-          </div>
-
-          <Button onClick={handleSaveProfile}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Profile
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Website Configuration */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Globe className="h-5 w-5" />
-            <CardTitle>Website Configuration</CardTitle>
-          </div>
-          <CardDescription>
-            Configure your website's general settings and contact information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name</Label>
-              <Input
-                id="siteName"
-                value={websiteSettings.siteName}
-                onChange={(e) => setWebsiteSettings(prev => ({
-                  ...prev,
-                  siteName: e.target.value
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contactEmail">Contact Email</Label>
-              <Input
-                id="contactEmail"
-                type="email"
-                value={websiteSettings.contactEmail}
-                onChange={(e) => setWebsiteSettings(prev => ({
-                  ...prev,
-                  contactEmail: e.target.value
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={websiteSettings.phone}
-                onChange={(e) => setWebsiteSettings(prev => ({
-                  ...prev,
-                  phone: e.target.value
-                }))}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tagline">Tagline</Label>
-            <Input
-              id="tagline"
-              value={websiteSettings.tagline}
-              onChange={(e) => setWebsiteSettings(prev => ({
-                ...prev,
-                tagline: e.target.value
-              }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={websiteSettings.address}
-              onChange={(e) => setWebsiteSettings(prev => ({
-                ...prev,
-                address: e.target.value
-              }))}
-              rows={3}
-            />
-          </div>
-
-          <Button onClick={handleSaveWebsite}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Website Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Pricing Configuration */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <DollarSign className="h-5 w-5" />
-            <CardTitle>Pricing Configuration</CardTitle>
-          </div>
-          <CardDescription>
-            Set default pricing rates and modifiers for different animation types
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="basicRate">Basic Formula Rate (per minute)</Label>
-              <Input
-                id="basicRate"
-                type="number"
-                value={pricingSettings.basicFormulaRate}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  basicFormulaRate: parseInt(e.target.value)
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="advancedRate">Advanced Formula Rate (per minute)</Label>
-              <Input
-                id="advancedRate"
-                type="number"
-                value={pricingSettings.advancedFormulaRate}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  advancedFormulaRate: parseInt(e.target.value)
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="objects3DRate">3D Math Objects Rate (per minute)</Label>
-              <Input
-                id="objects3DRate"
-                type="number"
-                value={pricingSettings.mathObjects3DRate}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  mathObjects3DRate: parseInt(e.target.value)
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="researchRate">Full Research Rate (per minute)</Label>
-              <Input
-                id="researchRate"
-                type="number"
-                value={pricingSettings.researchFullRate}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  researchFullRate: parseInt(e.target.value)
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rushMultiplier">Rush Order Multiplier</Label>
-              <Input
-                id="rushMultiplier"
-                type="number"
-                step="0.1"
-                value={pricingSettings.rushOrderMultiplier}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  rushOrderMultiplier: parseFloat(e.target.value)
-                }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bulkDiscount">Bulk Discount (%)</Label>
-              <Input
-                id="bulkDiscount"
-                type="number"
-                value={pricingSettings.bulkDiscountPercentage}
-                onChange={(e) => setPricingSettings(prev => ({
-                  ...prev,
-                  bulkDiscountPercentage: parseInt(e.target.value)
-                }))}
-              />
-            </div>
-          </div>
-
-          <Button onClick={handleSavePricing}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Pricing Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Notification Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Bell className="h-5 w-5" />
-            <CardTitle>Notification Settings</CardTitle>
-          </div>
-          <CardDescription>
-            Configure your notification preferences and alerts
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email for New Requests</Label>
-                <p className="text-sm text-muted-foreground">Get notified when new project requests are submitted</p>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="paymentReminders">Payment Reminders</Label>
+                  <p className="text-sm text-muted-foreground">Receive alerts for overdue payments</p>
+                </div>
+                <Switch
+                  id="paymentReminders"
+                  checked={settings.paymentReminders}
+                  onCheckedChange={(checked) => setSettings({...settings, paymentReminders: checked})}
+                />
               </div>
-              <Switch
-                checked={notificationSettings.emailNewRequests}
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({
-                  ...prev,
-                  emailNewRequests: checked
-                }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Payment Notifications</Label>
-                <p className="text-sm text-muted-foreground">Get notified about payment updates and confirmations</p>
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="autoAssignment">Auto Assignment</Label>
+                  <p className="text-sm text-muted-foreground">Automatically assign projects to available animators</p>
+                </div>
+                <Switch
+                  id="autoAssignment"
+                  checked={settings.autoAssignment}
+                  onCheckedChange={(checked) => setSettings({...settings, autoAssignment: checked})}
+                />
               </div>
-              <Switch
-                checked={notificationSettings.emailPayments}
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({
-                  ...prev,
-                  emailPayments: checked
-                }))}
-              />
-            </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Team Updates</Label>
-                <p className="text-sm text-muted-foreground">Get notified about team member activity and updates</p>
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Security Settings</span>
+              </CardTitle>
+              <CardDescription>
+                Manage admin account security and access controls
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Change Password</h4>
+                <div className="grid gap-4">
+                  <div>
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input id="currentPassword" type="password" />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input id="newPassword" type="password" />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input id="confirmPassword" type="password" />
+                  </div>
+                  
+                  <Button variant="outline" className="w-fit">Update Password</Button>
+                </div>
               </div>
-              <Switch
-                checked={notificationSettings.emailTeamUpdates}
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({
-                  ...prev,
-                  emailTeamUpdates: checked
-                }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Browser Notifications</Label>
-                <p className="text-sm text-muted-foreground">Show notifications in your browser</p>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h4 className="font-medium">Session Management</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">Current Session</p>
+                      <p className="text-sm text-muted-foreground">Chrome on Windows - 192.168.1.1</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Active</span>
+                  </div>
+                  
+                  <Button variant="outline" className="w-fit">
+                    Sign Out All Other Sessions
+                  </Button>
+                </div>
               </div>
-              <Switch
-                checked={notificationSettings.browserNotifications}
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({
-                  ...prev,
-                  browserNotifications: checked
-                }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Daily Reports</Label>
-                <p className="text-sm text-muted-foreground">Receive daily summary reports via email</p>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h4 className="font-medium">Security Logs</h4>
+                <div className="text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span>Last login</span>
+                    <span className="text-muted-foreground">Today at 9:15 AM</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Password changed</span>
+                    <span className="text-muted-foreground">Never</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Failed login attempts</span>
+                    <span className="text-muted-foreground">0 in last 30 days</span>
+                  </div>
+                </div>
               </div>
-              <Switch
-                checked={notificationSettings.dailyReports}
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({
-                  ...prev,
-                  dailyReports: checked
-                }))}
-              />
-            </div>
-          </div>
-
-          <Button onClick={handleSaveNotifications}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Notification Settings
-          </Button>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
