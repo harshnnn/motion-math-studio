@@ -94,6 +94,8 @@ const EnhancedDashboard = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [projectMessages, setProjectMessages] = useState<Record<string, any[]>>({});
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [notificationsUnavailable, setNotificationsUnavailable] = useState(false);
+  const [messagesUnavailable, setMessagesUnavailable] = useState(false);
   const { toast } = useToast();
 
   // --- Tab / Navigation Sync ---
@@ -161,7 +163,7 @@ const EnhancedDashboard = () => {
   };
 
   const fetchNotifications = async () => {
-    if (!user) return;
+    if (!user || notificationsUnavailable) return;
     try {
       setLoadingNotifications(true);
       const { data, error } = await supabase
@@ -172,8 +174,13 @@ const EnhancedDashboard = () => {
       if (error) throw error;
       setNotifications(data || []);
       setUnreadCount((data || []).filter(n => !n.read_at).length);
-    } catch (e) {
-      console.error('fetchNotifications error', e);
+    } catch (e: any) {
+      if (e?.code === 'PGRST205' || /notifications/.test(e?.message || '')) {
+        // Table not found in schema cache — migration not yet applied
+        setNotificationsUnavailable(true);
+      } else {
+        console.error('fetchNotifications error', e);
+      }
     } finally {
       setLoadingNotifications(false);
     }
@@ -209,7 +216,7 @@ const EnhancedDashboard = () => {
 
   // --- Project Messaging ---
   const loadMessagesForProject = async (projectId: string) => {
-    if (!user) return;
+    if (!user || messagesUnavailable) return;
     try {
       setLoadingMessages(true);
       const { data, error } = await supabase
@@ -220,8 +227,12 @@ const EnhancedDashboard = () => {
       if (error) throw error;
       setProjectMessages(prev => ({ ...prev, [projectId]: data || [] }));
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    } catch (e) {
-      console.error('loadMessagesForProject error', e);
+    } catch (e: any) {
+      if (e?.code === 'PGRST205' || /project_messages/.test(e?.message || '')) {
+        setMessagesUnavailable(true);
+      } else {
+        console.error('loadMessagesForProject error', e);
+      }
     } finally {
       setLoadingMessages(false);
     }
@@ -456,7 +467,7 @@ const EnhancedDashboard = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
                       <Bell className="h-5 w-5" />
-                      {unreadCount > 0 && (
+                      {unreadCount > 0 && !notificationsUnavailable && (
                         <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
@@ -466,8 +477,14 @@ const EnhancedDashboard = () => {
                   <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-auto">
                     <div className="flex items-center justify-between px-2 py-1.5 border-b">
                       <span className="text-xs font-medium text-muted-foreground">Notifications</span>
-                      <Button variant="outline" size="sm" disabled={unreadCount === 0} onClick={markAllNotificationsRead}>Mark all read</Button>
+                      <Button variant="outline" size="sm" disabled={unreadCount === 0 || notificationsUnavailable} onClick={markAllNotificationsRead}>Mark all read</Button>
                     </div>
+                    {notificationsUnavailable && (
+                      <div className="p-3 text-xs text-muted-foreground space-y-1">
+                        <p>Notifications feature pending migration.</p>
+                        <p className="text-[10px] opacity-60">Ask support if this persists.</p>
+                      </div>
+                    )}
                     {loadingNotifications && (
                       <div className="p-3 text-xs text-muted-foreground">Loading...</div>
                     )}
@@ -978,18 +995,18 @@ const EnhancedDashboard = () => {
                 {selectedProject.status === 'payment_pending' && (
                   <Button>Make Payment</Button>
                 )}
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => {
+                  loadMessagesForProject(selectedProject.id);
+                  setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder="Type a message..."]')?.focus(), 50);
+                }}>
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Message
+                  Conversation
                 </Button>
                 <Button variant="outline" disabled={selectedProject.status !== 'completed'} className={cn(selectedProject.status !== 'completed' && 'opacity-50 cursor-not-allowed backdrop-blur-sm') }>
                   <Download className="h-4 w-4 mr-2" />
                   {selectedProject.status === 'completed' ? 'Download' : 'Download (locked)'}
                 </Button>
-                <Button variant="outline">
-                  <Copy className="h-4 w-4 mr-2" />
-                  Duplicate
-                </Button>
+                {/* Duplicate removed in modal */}
               </div>
 
               {/* Project Conversation */}
