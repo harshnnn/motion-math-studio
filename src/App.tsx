@@ -21,6 +21,7 @@ import AdminClients from "./pages/admin/AdminClients";
 import AdminTeam from "./pages/admin/AdminTeam";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSupport from "./pages/admin/AdminSupport";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
                   <Route path="requests" element={<AdminRequests />} />
                   <Route path="projects" element={<AdminProjects />} />
                   <Route path="clients" element={<AdminClients />} />
+                  <Route path="support" element={<AdminSupport />} />
                   <Route path="team" element={<AdminTeam />} />
                   <Route path="payments" element={<AdminPayments />} />
                   <Route path="settings" element={<AdminSettings />} />
