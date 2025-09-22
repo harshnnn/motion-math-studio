@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,30 +11,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { 
-  LayoutDashboard, 
-  FolderKanban, 
-  Calculator, 
-  CreditCard, 
-  Bell, 
-  Filter, 
-  SortAsc, 
-  Eye, 
-  MessageSquare, 
-  Download, 
-  Copy, 
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Calculator,
+  CreditCard,
+  Bell,
+  Filter,
+  SortAsc,
+  Eye,
+  MessageSquare,
+  Download,
+  Copy,
   Star,
   StarOff,
   User,
-  Search,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   CheckCircle,
   AlertCircle,
   PlayCircle,
   FileText,
-  DollarSign
+  DollarSign,
+  ArrowRightCircle
 } from 'lucide-react';
 import { 
   Sidebar,
@@ -49,6 +47,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface Project {
   id: string;
@@ -78,6 +77,8 @@ interface QuickEstimate {
 
 const EnhancedDashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [estimates, setEstimates] = useState<QuickEstimate[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
@@ -87,6 +88,28 @@ const EnhancedDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinnedProjects, setPinnedProjects] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  // --- Tab / Navigation Sync ---
+  const queryTab = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') || 'projects';
+  }, [location.search]);
+  const [activeTab, setActiveTab] = useState(queryTab);
+
+  useEffect(() => {
+    // Keep internal state in sync when user hits back/forward
+    if (queryTab !== activeTab) {
+      setActiveTab(queryTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(location.search);
+    params.set('tab', value);
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  };
 
   useEffect(() => {
     if (user) {
@@ -139,26 +162,27 @@ const EnhancedDashboard = () => {
   }
 
   const getStatusColor = (status: string) => {
+    // Dark-theme friendly subtle tinted backgrounds
     switch (status) {
       case 'under_review':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30';
       case 'accepted':
       case 'assigned_to_animator':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-sky-500/15 text-sky-300 border-sky-500/30';
       case 'rejected':
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-500/15 text-red-300 border-red-500/30';
       case 'negotiation':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
       case 'payment_pending':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-500/15 text-orange-300 border-orange-500/30';
       case 'under_process':
       case 'in_revision':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-500/15 text-green-300 border-green-500/30';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted/30 text-muted-foreground border-border/50';
     }
   };
 
@@ -243,20 +267,19 @@ const EnhancedDashboard = () => {
   };
 
   const convertEstimateToProject = (estimate: QuickEstimate) => {
-    // Navigate to request page with pre-filled data
     const params = new URLSearchParams({
       animation_type: estimate.animation_type,
       duration: estimate.duration_seconds.toString(),
       estimated_price: estimate.estimated_price.toString()
     });
-    window.location.href = `/request?${params.toString()}`;
+    navigate(`/request?${params.toString()}`);
   };
 
-  const sidebarItems = [
-    { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-    { title: "Projects", icon: FolderKanban, path: "/dashboard?tab=projects" },
-    { title: "Estimates", icon: Calculator, path: "/dashboard?tab=estimates" },
-    { title: "Payments", icon: CreditCard, path: "/dashboard?tab=payments" },
+  const sidebarItems: { title: string; icon: any; tab: string; description?: string }[] = [
+    { title: 'Overview', icon: LayoutDashboard, tab: 'projects', description: 'Project overview & KPIs' },
+    { title: 'Projects', icon: FolderKanban, tab: 'projects', description: 'Manage your animation projects' },
+    { title: 'Estimates', icon: Calculator, tab: 'estimates', description: 'Previous quick estimates' },
+    { title: 'Payments', icon: CreditCard, tab: 'payments', description: 'Invoices & payment status' }
   ];
 
   // Statistics
@@ -269,32 +292,51 @@ const EnhancedDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gradient-to-b from-background via-background to-background/95">
         {/* Sidebar */}
-        <Sidebar className="border-r">
+        <Sidebar className="border-r bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/55">
           <SidebarContent>
-            <div className="p-4">
-              <h1 className="text-lg font-bold bg-gradient-text bg-clip-text text-transparent">
-                MathInMotion
+            <div className="p-4 border-b border-border/50">
+              <h1 className="text-lg font-bold tracking-tight">
+                <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">MathInMotion</span>
               </h1>
             </div>
             <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupLabel className="px-4 text-xs font-semibold text-muted-foreground/70">Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {sidebarItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link to={item.path} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {sidebarItems.map((item) => {
+                    const isActive = activeTab === item.tab;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <button
+                            onClick={() => handleTabChange(item.tab)}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={cn(
+                              'w-full text-left flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors group',
+                              isActive
+                                ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                            )}
+                          >
+                            <item.icon className={cn('h-4 w-4', isActive && 'text-primary')} />
+                            <span className="flex-1">{item.title}</span>
+                            {!isActive && item.description && (
+                              <ArrowRightCircle className="h-4 w-4 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
+                            )}
+                          </button>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            <div className="mt-auto p-4 border-t border-border/50 text-xs text-muted-foreground/70">
+              <p>Signed in as</p>
+              <p className="truncate font-medium text-foreground/90">{user.email}</p>
+            </div>
           </SidebarContent>
         </Sidebar>
 
@@ -338,9 +380,10 @@ const EnhancedDashboard = () => {
           </header>
 
           {/* Main Dashboard Content */}
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-6 space-y-6">
+            {/* KPI Row (already present stats moved below with slight visual polish) */}
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
@@ -383,10 +426,11 @@ const EnhancedDashboard = () => {
             </div>
 
             {/* Tabs for different sections */}
-            <Tabs defaultValue="projects" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
               <TabsList>
                 <TabsTrigger value="projects">Projects</TabsTrigger>
                 <TabsTrigger value="estimates">Estimates</TabsTrigger>
+                <TabsTrigger value="payments">Payments</TabsTrigger>
                 <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
               </TabsList>
 
@@ -593,6 +637,79 @@ const EnhancedDashboard = () => {
                         ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Payments Tab */}
+              <TabsContent value="payments" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payments & Invoices</CardTitle>
+                    <CardDescription>Track what has been billed and what is pending.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-xs font-medium tracking-wide text-muted-foreground">Total Spent</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-2xl font-bold">${totalSpent}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-xs font-medium tracking-wide text-muted-foreground">Pending Payments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-2xl font-bold">{projects.filter(p => p.status === 'payment_pending').length}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-xs font-medium tracking-wide text-muted-foreground">Completed (Paid)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-2xl font-bold">{projects.filter(p => p.status === 'completed').length}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm tracking-wide text-muted-foreground">Payment Pending Projects</h4>
+                      {projects.filter(p => p.status === 'payment_pending').length === 0 ? (
+                        <p className="text-sm text-muted-foreground/70">No payments are pending right now.</p>
+                      ) : (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {projects.filter(p => p.status === 'payment_pending').map(p => (
+                            <Card key={p.id} className="border border-orange-500/20 bg-orange-500/5">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4 text-orange-400" />
+                                  {p.title}
+                                </CardTitle>
+                                <CardDescription className="text-xs line-clamp-2">{p.description}</CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-3">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>Estimated</span>
+                                  <span>${p.estimated_price || 0}</span>
+                                </div>
+                                {p.final_price && (
+                                  <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Final</span>
+                                    <span>${p.final_price}</span>
+                                  </div>
+                                )}
+                                <Button size="sm" className="w-full" variant="secondary">
+                                  Pay Now
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
