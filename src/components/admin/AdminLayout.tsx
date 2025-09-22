@@ -13,7 +13,8 @@ import {
   LogOut,
   Menu,
   X,
-  Bell
+  Bell,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ const AdminLayout = () => {
     { path: '/admin/requests', label: 'Client Requests', icon: ClipboardList },
     { path: '/admin/projects', label: 'Projects', icon: FolderOpen },
     { path: '/admin/clients', label: 'Clients', icon: Users },
+    { path: '/admin/support', label: 'Support Inbox', icon: MessageSquare },
     { path: '/admin/team', label: 'Team', icon: UserCheck },
     { path: '/admin/payments', label: 'Payments', icon: CreditCard },
     { path: '/admin/settings', label: 'Settings', icon: Settings },
