@@ -32,7 +32,8 @@ import {
   PlayCircle,
   FileText,
   DollarSign,
-  ArrowRightCircle
+  ArrowRightCircle,
+  HelpCircle
 } from 'lucide-react';
 import { 
   Sidebar,
@@ -96,6 +97,10 @@ const EnhancedDashboard = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [notificationsUnavailable, setNotificationsUnavailable] = useState(false);
   const [messagesUnavailable, setMessagesUnavailable] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportMessages, setSupportMessages] = useState<any[]>([]);
+  const [supportInput, setSupportInput] = useState('');
+  const [loadingSupport, setLoadingSupport] = useState(false);
   const { toast } = useToast();
 
   // --- Tab / Navigation Sync ---
@@ -257,6 +262,44 @@ const EnhancedDashboard = () => {
     } catch (e) {
       console.error('sendMessage error', e);
       toast({ title: 'Message failed', description: 'Could not send message.', variant: 'destructive' });
+    }
+  };
+
+  const fetchSupportMessages = async () => {
+    if (!user) return;
+    try {
+      setLoadingSupport(true);
+      const { data, error } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setSupportMessages(data || []);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (e) {
+      console.error('fetchSupportMessages error', e);
+    } finally {
+      setLoadingSupport(false);
+    }
+  };
+
+  const sendSupportMessage = async () => {
+    if (!supportInput.trim() || !user) return;
+    const content = supportInput.trim();
+    setSupportInput('');
+    try {
+      const { data, error } = await supabase
+        .from('support_messages')
+        .insert({ user_id: user.id, sender_id: user.id, content })
+        .select('*')
+        .single();
+      if (error) throw error;
+      setSupportMessages(prev => [...prev, data]);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 20);
+    } catch (e) {
+      console.error('sendSupportMessage error', e);
+      toast({ title: 'Message failed', description: 'Could not send support message.', variant: 'destructive' });
     }
   };
 
@@ -522,6 +565,11 @@ const EnhancedDashboard = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Support Chat Button */}
+                <Button variant="outline" onClick={() => { setSupportOpen(true); fetchSupportMessages(); }}>
+                  <HelpCircle className="h-4 w-4 mr-2" /> Support
+                </Button>
               </div>
             </div>
           </header>
@@ -1041,6 +1089,41 @@ const EnhancedDashboard = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Support Chat Dialog */}
+      <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Support Chat</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-xs text-muted-foreground">Chat directly with our support team.</div>
+            <div className="max-h-72 overflow-auto rounded-md border bg-muted/10 p-3 space-y-2 text-sm">
+              {loadingSupport && <p className="text-xs text-muted-foreground">Loading...</p>}
+              {!loadingSupport && supportMessages.length === 0 && (
+                <p className="text-xs text-muted-foreground">No messages yet. Ask us anything!</p>
+              )}
+              {supportMessages.map(m => (
+                <div key={m.id} className={cn('flex flex-col gap-0.5 rounded p-2', m.sender_id === user.id ? 'bg-primary/10 ml-auto max-w-[80%]' : 'bg-muted/30 mr-auto max-w-[80%]') }>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{m.sender_id === user.id ? 'You' : 'Support'}</span>
+                  <p>{m.content}</p>
+                  <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={supportInput}
+                onChange={(e) => setSupportInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendSupportMessage(); } }}
+              />
+              <Button onClick={sendSupportMessage} disabled={!supportInput.trim()}>Send</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </SidebarProvider>
