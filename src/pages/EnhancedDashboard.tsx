@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,8 @@ import {
   AlertCircle,
   PlayCircle,
   FileText,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from 'lucide-react';
 import { 
   Sidebar,
@@ -87,6 +88,17 @@ const EnhancedDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [pinnedProjects, setPinnedProjects] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Hydrate persisted UI state
+  useEffect(() => {
+    const persistedPinned = localStorage.getItem('dashboard:pinned');
+    const persistedFilter = localStorage.getItem('dashboard:filter');
+    const persistedSort = localStorage.getItem('dashboard:sort');
+    if (persistedPinned) setPinnedProjects(new Set(JSON.parse(persistedPinned)));
+    if (persistedFilter) setFilterStatus(persistedFilter);
+    if (persistedSort) setSortBy(persistedSort);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -96,6 +108,7 @@ const EnhancedDashboard = () => {
 
   const fetchProjectsAndEstimates = async () => {
     try {
+      setRefreshing(true);
       // Fetch projects
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -123,6 +136,7 @@ const EnhancedDashboard = () => {
       });
     } finally {
       setProjectsLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -138,62 +152,24 @@ const EnhancedDashboard = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'under_review':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'accepted':
-      case 'assigned_to_animator':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'rejected':
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'negotiation':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'payment_pending':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'under_process':
-      case 'in_revision':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  // Consolidated status configuration (avoids repetitive switch statements)
+  const STATUS_CONFIG: Record<string, { color: string; icon: JSX.Element; progress: number }> = {
+    draft: { color: 'bg-gray-100 text-gray-800 border-gray-200', icon: <FileText className="h-4 w-4" />, progress: 10 },
+    under_review: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: <Clock className="h-4 w-4" />, progress: 25 },
+    accepted: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: <PlayCircle className="h-4 w-4" />, progress: 40 },
+    assigned_to_animator: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: <PlayCircle className="h-4 w-4" />, progress: 55 },
+    payment_pending: { color: 'bg-orange-100 text-orange-800 border-orange-200', icon: <AlertCircle className="h-4 w-4" />, progress: 45 },
+    under_process: { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: <PlayCircle className="h-4 w-4" />, progress: 75 },
+    in_revision: { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', icon: <AlertCircle className="h-4 w-4" />, progress: 80 },
+    negotiation: { color: 'bg-purple-100 text-purple-800 border-purple-200', icon: <AlertCircle className="h-4 w-4" />, progress: 30 },
+    completed: { color: 'bg-green-100 text-green-800 border-green-200', icon: <CheckCircle className="h-4 w-4" />, progress: 100 },
+    rejected: { color: 'bg-red-100 text-red-800 border-red-200', icon: <AlertCircle className="h-4 w-4" />, progress: 0 },
+    cancelled: { color: 'bg-red-100 text-red-800 border-red-200', icon: <AlertCircle className="h-4 w-4" />, progress: 0 },
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'under_review':
-        return <Clock className="h-4 w-4" />;
-      case 'accepted':
-      case 'assigned_to_animator':
-        return <PlayCircle className="h-4 w-4" />;
-      case 'completed':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'rejected':
-      case 'cancelled':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const getProgressPercentage = (status: string) => {
-    switch (status) {
-      case 'draft': return 10;
-      case 'under_review': return 25;
-      case 'accepted': return 40;
-      case 'assigned_to_animator': return 55;
-      case 'payment_pending': return 45;
-      case 'under_process': return 75;
-      case 'in_revision': return 80;
-      case 'completed': return 100;
-      case 'rejected':
-      case 'cancelled': return 0;
-      default: return 0;
-    }
-  };
+  const getStatusColor = useCallback((status: string) => STATUS_CONFIG[status]?.color || 'bg-gray-100 text-gray-800 border-gray-200', []);
+  const getStatusIcon = useCallback((status: string) => STATUS_CONFIG[status]?.icon || <FileText className="h-4 w-4" />, []);
+  const getProgressPercentage = useCallback((status: string) => STATUS_CONFIG[status]?.progress ?? 0, []);
 
   const formatAnimationType = (type: string) => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -203,32 +179,33 @@ const EnhancedDashboard = () => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const filteredProjects = projects
-    .filter(project => 
-      (filterStatus === 'all' || project.status === filterStatus) &&
-      (searchQuery === '' || 
-       project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       project.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProjects = useMemo(() => {
+    return projects
+      .filter(project =>
+        (filterStatus === 'all' || project.status === filterStatus) &&
+        (searchQuery === '' ||
+          project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          project.description.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       )
-    )
-    .sort((a, b) => {
-      if (pinnedProjects.has(a.id) && !pinnedProjects.has(b.id)) return -1;
-      if (!pinnedProjects.has(a.id) && pinnedProjects.has(b.id)) return 1;
-      
-      switch (sortBy) {
-        case 'created_at':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'deadline':
-          if (!a.deadline && !b.deadline) return 0;
-          if (!a.deadline) return 1;
-          if (!b.deadline) return -1;
-          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-        case 'title':
-          return a.title.localeCompare(b.title);
-        default:
-          return 0;
-      }
-    });
+      .sort((a, b) => {
+        if (pinnedProjects.has(a.id) && !pinnedProjects.has(b.id)) return -1;
+        if (!pinnedProjects.has(a.id) && pinnedProjects.has(b.id)) return 1;
+        switch (sortBy) {
+          case 'created_at':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          case 'deadline':
+            if (!a.deadline && !b.deadline) return 0;
+            if (!a.deadline) return 1;
+            if (!b.deadline) return -1;
+            return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+          case 'title':
+            return a.title.localeCompare(b.title);
+          default:
+            return 0;
+        }
+      });
+  }, [projects, filterStatus, searchQuery, pinnedProjects, sortBy]);
 
   const togglePin = (projectId: string) => {
     setPinnedProjects(prev => {
@@ -238,6 +215,7 @@ const EnhancedDashboard = () => {
       } else {
         newSet.add(projectId);
       }
+      localStorage.setItem('dashboard:pinned', JSON.stringify(Array.from(newSet)));
       return newSet;
     });
   };
@@ -259,6 +237,10 @@ const EnhancedDashboard = () => {
     { title: "Payments", icon: CreditCard, path: "/dashboard?tab=payments" },
   ];
 
+  // Persist filter/sort changes
+  useEffect(() => { localStorage.setItem('dashboard:filter', filterStatus); }, [filterStatus]);
+  useEffect(() => { localStorage.setItem('dashboard:sort', sortBy); }, [sortBy]);
+
   // Statistics
   const totalProjects = projects.length;
   const activeProjects = projects.filter(p => 
@@ -271,10 +253,10 @@ const EnhancedDashboard = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         {/* Sidebar */}
-        <Sidebar className="border-r">
+        <Sidebar className="border-r bg-gradient-to-b from-[hsl(var(--sidebar-background))] via-[hsl(var(--surface))] to-[hsl(var(--background))]">
           <SidebarContent>
-            <div className="p-4">
-              <h1 className="text-lg font-bold bg-gradient-text bg-clip-text text-transparent">
+            <div className="p-4 border-b border-border/20 backdrop-blur-sm bg-[hsla(var(--sidebar-background)_/_0.85)]">
+              <h1 className="text-lg font-bold bg-gradient-text bg-clip-text text-transparent tracking-tight">
                 MathInMotion
               </h1>
             </div>
@@ -304,18 +286,26 @@ const EnhancedDashboard = () => {
           <header className="border-b border-border/50 bg-surface/80 backdrop-blur-sm">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center space-x-4">
-                <SidebarTrigger />
-                <h1 className="text-xl font-semibold">Dashboard</h1>
+                <SidebarTrigger aria-label="Toggle navigation" />
+                <h1 className="text-xl font-semibold bg-gradient-text bg-clip-text text-transparent">Dashboard</h1>
               </div>
               
               <div className="flex items-center space-x-4">
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative" aria-label="Notifications" title="Notifications">
                   <Bell className="h-5 w-5" />
                   {activeProjects > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
                       {activeProjects}
                     </span>
+                  )}
+                </Button>
+
+                <Button variant="outline" size="icon" aria-label="Refresh" title="Refresh data" onClick={fetchProjectsAndEstimates} disabled={refreshing}>
+                  {refreshing ? (
+                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
                   )}
                 </Button>
 
@@ -450,7 +440,8 @@ const EnhancedDashboard = () => {
                 ) : (
                   <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredProjects.map((project) => (
-                      <Card key={project.id} className="hover:shadow-md transition-shadow">
+                      <Card key={project.id} className="hover:shadow-md transition-all duration-300 border-border/60 hover:border-border group relative overflow-hidden">
+                        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-tr from-primary/10 via-transparent to-secondary/10" />
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -476,11 +467,11 @@ const EnhancedDashboard = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setSelectedProject(project)}>
+                                <DropdownMenuItem onClick={() => setSelectedProject(project)} aria-label={`View details of ${project.title}`}>
                                   <Eye className="h-4 w-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => togglePin(project.id)}>
+                                <DropdownMenuItem onClick={() => togglePin(project.id)} aria-label={pinnedProjects.has(project.id) ? `Unpin ${project.title}` : `Pin ${project.title}`}>
                                   {pinnedProjects.has(project.id) ? (
                                     <>
                                       <StarOff className="h-4 w-4 mr-2" />
@@ -502,7 +493,7 @@ const EnhancedDashboard = () => {
                           </div>
                         </CardHeader>
                         
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 relative">
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             {project.description}
                           </p>
