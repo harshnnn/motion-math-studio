@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,6 +87,13 @@ const EnhancedDashboard = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [searchQuery, setSearchQuery] = useState('');
   const [pinnedProjects, setPinnedProjects] = useState<Set<string>>(new Set());
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [projectMessages, setProjectMessages] = useState<Record<string, any[]>>({});
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const { toast } = useToast();
 
   // --- Tab / Navigation Sync ---
@@ -114,6 +121,10 @@ const EnhancedDashboard = () => {
   useEffect(() => {
     if (user) {
       fetchProjectsAndEstimates();
+      fetchNotifications();
+      // periodic refresh for notifications (every 30s)
+      const intv = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(intv);
     }
   }, [user]);
 
@@ -146,6 +157,95 @@ const EnhancedDashboard = () => {
       });
     } finally {
       setProjectsLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      setLoadingNotifications(true);
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(25);
+      if (error) throw error;
+      setNotifications(data || []);
+      setUnreadCount((data || []).filter(n => !n.read_at).length);
+    } catch (e) {
+      console.error('fetchNotifications error', e);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const markNotificationRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      console.error('markNotificationRead error', e);
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .is('read_at', null);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.read_at ? n : { ...n, read_at: new Date().toISOString() }));
+      setUnreadCount(0);
+    } catch (e) {
+      console.error('markAllNotificationsRead error', e);
+    }
+  };
+
+  // --- Project Messaging ---
+  const loadMessagesForProject = async (projectId: string) => {
+    if (!user) return;
+    try {
+      setLoadingMessages(true);
+      const { data, error } = await supabase
+        .from('project_messages')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      setProjectMessages(prev => ({ ...prev, [projectId]: data || [] }));
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    } catch (e) {
+      console.error('loadMessagesForProject error', e);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!selectedProject || !messageInput.trim() || !user) return;
+    const content = messageInput.trim();
+    setMessageInput('');
+    try {
+      const { data, error } = await supabase
+        .from('project_messages')
+        .insert({ project_id: selectedProject.id, sender_id: user.id, content })
+        .select('*')
+        .single();
+      if (error) throw error;
+      setProjectMessages(prev => ({
+        ...prev,
+        [selectedProject.id]: [...(prev[selectedProject.id] || []), data]
+      }));
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 20);
+    } catch (e) {
+      console.error('sendMessage error', e);
+      toast({ title: 'Message failed', description: 'Could not send message.', variant: 'destructive' });
     }
   };
 
@@ -352,14 +452,44 @@ const EnhancedDashboard = () => {
               
               <div className="flex items-center space-x-4">
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  {activeProjects > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                      {activeProjects}
-                    </span>
-                  )}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-auto">
+                    <div className="flex items-center justify-between px-2 py-1.5 border-b">
+                      <span className="text-xs font-medium text-muted-foreground">Notifications</span>
+                      <Button variant="outline" size="sm" disabled={unreadCount === 0} onClick={markAllNotificationsRead}>Mark all read</Button>
+                    </div>
+                    {loadingNotifications && (
+                      <div className="p-3 text-xs text-muted-foreground">Loading...</div>
+                    )}
+                    {(!loadingNotifications && notifications.length === 0) && (
+                      <div className="p-3 text-xs text-muted-foreground">No notifications yet.</div>
+                    )}
+                    {notifications.map(n => (
+                      <div key={n.id} className={cn('px-3 py-2 text-xs rounded-md cursor-pointer group', !n.read_at ? 'bg-muted/40' : 'hover:bg-muted/30')} onClick={() => markNotificationRead(n.id)}>
+                        <div className="flex justify-between gap-2">
+                          <p className={cn('font-medium line-clamp-1', !n.read_at && 'text-primary')}>{n.title}</p>
+                          {!n.read_at && <span className="w-2 h-2 rounded-full bg-primary shrink-0 self-center" />}
+                        </div>
+                        <p className="line-clamp-2 mt-0.5 text-muted-foreground/80">{n.message}</p>
+                        {n.project_id && (
+                          <Button variant="link" size="sm" className="px-0 h-auto mt-1" onClick={(e) => { e.stopPropagation(); const proj = projects.find(p => p.id === n.project_id); if (proj) { setSelectedProject(proj); loadMessagesForProject(proj.id); }}}>
+                            Open Project
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 {/* Profile Dropdown */}
                 <DropdownMenu>
@@ -537,10 +667,7 @@ const EnhancedDashboard = () => {
                                     </>
                                   )}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  Duplicate
-                                </DropdownMenuItem>
+                                {/* Duplicate removed as requested */}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -855,14 +982,45 @@ const EnhancedDashboard = () => {
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Message
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" disabled={selectedProject.status !== 'completed'} className={cn(selectedProject.status !== 'completed' && 'opacity-50 cursor-not-allowed backdrop-blur-sm') }>
                   <Download className="h-4 w-4 mr-2" />
-                  Download
+                  {selectedProject.status === 'completed' ? 'Download' : 'Download (locked)'}
                 </Button>
                 <Button variant="outline">
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
                 </Button>
+              </div>
+
+              {/* Project Conversation */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Project Conversation</h4>
+                  <Button variant="outline" size="sm" onClick={() => loadMessagesForProject(selectedProject.id)}>Refresh</Button>
+                </div>
+                <div className="max-h-64 overflow-auto rounded-md border bg-muted/10 p-3 space-y-2 text-sm">
+                  {loadingMessages && <p className="text-xs text-muted-foreground">Loading messages...</p>}
+                  {(!loadingMessages && (projectMessages[selectedProject.id]?.length || 0) === 0) && (
+                    <p className="text-xs text-muted-foreground">No messages yet. Start the conversation.</p>
+                  )}
+                  {(projectMessages[selectedProject.id] || []).map(m => (
+                    <div key={m.id} className={cn('flex flex-col gap-0.5 rounded p-2', m.sender_id === user.id ? 'bg-primary/10 ml-auto max-w-[80%]' : 'bg-muted/30 mr-auto max-w-[80%]') }>
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{m.sender_id === user.id ? 'You' : 'Admin'}</span>
+                      <p>{m.content}</p>
+                      <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                  />
+                  <Button onClick={sendMessage} disabled={!messageInput.trim()}>Send</Button>
+                </div>
               </div>
             </div>
           )}
