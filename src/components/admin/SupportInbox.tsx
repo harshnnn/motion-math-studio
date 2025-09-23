@@ -25,6 +25,21 @@ const SupportInbox = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [threadFilter, setThreadFilter] = useState('');
+
+  const checkAdmin = async () => {
+    try {
+      const authUser = (await supabase.auth.getUser()).data.user;
+      if (!authUser) { setIsAdmin(false); return; }
+      const { data: profile } = await supabase.from('profiles').select('email').eq('user_id', authUser.id).maybeSingle();
+      if (!profile?.email) { setIsAdmin(false); return; }
+      const { data: adminRow } = await supabase.from('admin_users').select('email,is_active').eq('email', profile.email).eq('is_active', true).maybeSingle();
+      setIsAdmin(!!adminRow);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
 
   const loadMessages = async () => {
     try {
@@ -37,7 +52,9 @@ const SupportInbox = () => {
       const grouped: Record<string, SupportMessage[]> = {};
       (data || []).forEach(m => {
         grouped[m.user_id] = grouped[m.user_id] || [];
-        grouped[m.user_id].push(m);
+        if (!grouped[m.user_id].some(existing => existing.id === m.id)) {
+          grouped[m.user_id].push(m);
+        }
       });
       const threadArr: ThreadGroup[] = Object.entries(grouped).map(([user_id, msgs]) => ({
         user_id,
@@ -56,6 +73,7 @@ const SupportInbox = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    checkAdmin();
     loadMessages();
     const intv = setInterval(loadMessages, 20000); // periodic fallback refresh
     return () => clearInterval(intv);
@@ -72,19 +90,17 @@ const SupportInbox = () => {
       }, (payload) => {
         const newMsg = payload.new as SupportMessage;
         setThreads(prev => {
-          // Insert into correct thread or create it
-            const existing = prev.find(t => t.user_id === newMsg.user_id);
-            if (existing) {
-              const updated = prev.map(t => t.user_id === newMsg.user_id
-                ? { ...t, messages: [...t.messages, newMsg], last_message_at: newMsg.created_at }
-                : t);
-              // resort threads
-              return [...updated].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-            } else {
-              const newThread: ThreadGroup = { user_id: newMsg.user_id, messages: [newMsg], last_message_at: newMsg.created_at };
-              const updated = [...prev, newThread].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-              return updated;
-            }
+          const existing = prev.find(t => t.user_id === newMsg.user_id);
+          if (existing) {
+            if (existing.messages.some(m => m.id === newMsg.id)) return prev; // dedupe race
+            const updated = prev.map(t => t.user_id === newMsg.user_id
+              ? { ...t, messages: [...t.messages, newMsg], last_message_at: newMsg.created_at }
+              : t);
+            return [...updated].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+          } else {
+            const newThread: ThreadGroup = { user_id: newMsg.user_id, messages: [newMsg], last_message_at: newMsg.created_at };
+            return [...prev, newThread].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+          }
         });
         // Auto-select first thread if none active
         setActiveUser(cur => cur || newMsg.user_id);
@@ -97,6 +113,7 @@ const SupportInbox = () => {
     if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [threads, activeUser]);
 
+  const filteredThreads = threads.filter(t => t.user_id.toLowerCase().includes(threadFilter.toLowerCase()));
   const activeMessages = threads.find(t => t.user_id === activeUser)?.messages || [];
 
   const sendReply = async () => {
@@ -127,10 +144,22 @@ const SupportInbox = () => {
           <Button variant="outline" size="sm" onClick={loadMessages} disabled={loading}>Refresh</Button>
         </CardHeader>
         <CardContent className="overflow-auto space-y-1">
+          {isAdmin === false && (
+            <p className="text-[10px] text-red-500 mb-2">You are not an active admin. (Showing only threads you can access.)</p>
+          )}
+          <div className="sticky top-0 bg-background/95 backdrop-blur pt-0 pb-2 space-y-2">
+            <Input
+              placeholder="Filter by user id..."
+              value={threadFilter}
+              onChange={(e) => setThreadFilter(e.target.value)}
+              className="h-8 text-xs"
+            />
+            <div className="text-[10px] text-muted-foreground">{filteredThreads.length} thread(s)</div>
+          </div>
           {threads.length === 0 && (
             <p className="text-xs text-muted-foreground">No threads yet.</p>
           )}
-          {threads.map(t => (
+          {filteredThreads.map(t => (
             <button key={t.user_id} onClick={() => setActiveUser(t.user_id)} className={cn('w-full text-left px-2 py-2 rounded border text-xs', activeUser === t.user_id ? 'bg-primary/10 border-primary/40' : 'hover:bg-muted/40 border-border/50') }>
               <div className="font-medium truncate">User: {t.user_id.slice(0,8)}</div>
               <div className="text-[10px] text-muted-foreground">{new Date(t.last_message_at).toLocaleString()}</div>
