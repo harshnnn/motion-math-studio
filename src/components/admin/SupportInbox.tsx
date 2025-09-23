@@ -26,43 +26,56 @@ const SupportInbox = () => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [threadFilter, setThreadFilter] = useState('');
 
-  const checkAdmin = async () => {
-    try {
-      const authUser = (await supabase.auth.getUser()).data.user;
-      if (!authUser) { setIsAdmin(false); return; }
-      const { data: profile } = await supabase.from('profiles').select('email').eq('user_id', authUser.id).maybeSingle();
-      if (!profile?.email) { setIsAdmin(false); return; }
-      const { data: adminRow } = await supabase
-        .from('admin_users')
-        .select('email,is_active')
-        .eq('is_active', true)
-        .filter('email','ilike', profile.email) // case-insensitive
-        .maybeSingle();
-      setIsAdmin(!!adminRow);
-    } catch {
-      setIsAdmin(false);
-    }
-  };
-
-  const loadMessages = async () => {
+  const loadMessages = async (explicitRefresh = false) => {
     try {
       setLoading(true);
       let data: SupportMessage[] | null = null;
-      if (isAdmin) {
-        // Use RPC to bypass any lingering RLS mismatches
+      let attemptedAdmin = false;
+      // If we haven't determined admin status OR we're already admin, attempt RPC first
+      if (isAdmin !== false) {
+        attemptedAdmin = true;
         const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_list_support_messages');
-        if (rpcErr) throw rpcErr;
-        data = rpcData as any;
-      } else {
+        if (!rpcErr) {
+          setIsAdmin(true);
+          setErrorMsg(null);
+          data = rpcData as any;
+        } else {
+          // Not authorized or other error
+            console.warn('admin_list_support_messages RPC error:', rpcErr.message);
+            if (rpcErr.message.toLowerCase().includes('not authorized')) {
+              setIsAdmin(false);
+              setErrorMsg('Not an admin (RPC)');
+            } else {
+              setIsAdmin(false); // fallback anyway
+              setErrorMsg(rpcErr.message);
+            }
+        }
+      }
+      if (!data) {
+        // Fallback to user-limited select (RLS will restrict automatically)
+        const authUser = (await supabase.auth.getUser()).data.user;
         const { data: selData, error: selErr } = await supabase
           .from('support_messages')
           .select('*')
           .order('created_at', { ascending: true });
         if (selErr) throw selErr;
         data = selData;
+        if (!attemptedAdmin && isAdmin === null) {
+          // could not attempt admin yet; mark unknown
+          setIsAdmin(false);
+        }
       }
+
+      // Debug info once when determining admin
+      if (explicitRefresh || isAdmin === null) {
+        const authUser = (await supabase.auth.getUser()).data.user;
+        const authEmail = authUser?.email;
+        console.debug('[SupportInbox] refresh', { isAdminDetermined: isAdmin, authEmail, messageCount: data?.length, errorMsg });
+      }
+
       const grouped: Record<string, SupportMessage[]> = {};
       (data || []).forEach(m => {
         grouped[m.user_id] = grouped[m.user_id] || [];
@@ -86,23 +99,17 @@ const SupportInbox = () => {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // First check admin, then load messages (since load depends on isAdmin)
+  // Initial load (determines admin automatically via RPC attempt)
   useEffect(() => {
-    (async () => {
-      await checkAdmin();
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (isAdmin === null) return; // wait until admin status resolved
     loadMessages();
-    const intv = setInterval(loadMessages, 20000);
+    const intv = setInterval(() => loadMessages(), 20000);
     return () => clearInterval(intv);
-  }, [isAdmin]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Realtime subscription for all support messages (admin scope)
   useEffect(() => {
-    if (isAdmin === null) return; // wait
+    if (isAdmin === null) return; // wait for first determination
     const channel = supabase
       .channel('support_messages_admin')
       .on('postgres_changes', {
@@ -162,11 +169,14 @@ const SupportInbox = () => {
       <Card className="md:col-span-1 h-[70vh] flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Support Threads</CardTitle>
-          <Button variant="outline" size="sm" onClick={loadMessages} disabled={loading}>Refresh</Button>
+          <Button variant="outline" size="sm" onClick={() => loadMessages(true)} disabled={loading}>Refresh</Button>
         </CardHeader>
         <CardContent className="overflow-auto space-y-1">
           {isAdmin === false && (
             <p className="text-[10px] text-red-500 mb-2">You are not an active admin. (Showing only threads you can access.)</p>
+          )}
+          {errorMsg && (
+            <p className="text-[10px] text-amber-500 mb-2">Admin probe: {errorMsg}</p>
           )}
           <div className="sticky top-0 bg-background/95 backdrop-blur pt-0 pb-2 space-y-2">
             <Input
