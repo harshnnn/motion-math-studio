@@ -69,19 +69,15 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const signIn = async (username: string, password: string) => {
     try {
       setLoading(true);
-
       const { data, error } = await supabase.rpc('admin_login', {
         p_username: username,
         p_password: password
       });
-
       if (error) throw error;
       if (!data || data.length === 0) {
         throw new Error('Invalid credentials');
       }
-
       const row = data[0];
-
       const adminUser = {
         id: row.id,
         username: row.username,
@@ -89,15 +85,25 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         last_login: row.last_login,
         is_active: true
       };
-
+      // Ensure Supabase auth session (needed for RLS auth.uid())
+      const sessionCheck = await supabase.auth.getSession();
+      const currentEmail = sessionCheck.data.session?.user?.email;
+      if (currentEmail?.toLowerCase() !== adminUser.email.toLowerCase()) {
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: adminUser.email,
+          password
+        });
+        if (signInErr) {
+          console.warn('Supabase auth sign-in for admin failed:', signInErr.message);
+          throw new Error('Admin auth session could not be established');
+        }
+      }
       setAdminUser(adminUser);
       localStorage.setItem('admin_user', JSON.stringify(adminUser));
-
       toast({
         title: "Welcome back!",
         description: "Signed in to admin panel.",
       });
-
       return { error: null };
     } catch (error: any) {
       toast({
