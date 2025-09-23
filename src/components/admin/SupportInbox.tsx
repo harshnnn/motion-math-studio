@@ -48,6 +48,13 @@ const SupportInbox = () => {
             if (rpcErr.message.toLowerCase().includes('not authorized')) {
               setIsAdmin(false);
               setErrorMsg('Not an admin (RPC)');
+              // Attempt debug context fetch
+              try {
+                const dbg = await supabase.rpc('debug_admin_context');
+                console.warn('[SupportInbox] debug_admin_context', dbg);
+              } catch (dbgErr) {
+                console.warn('[SupportInbox] debug_admin_context failed', dbgErr);
+              }
             } else {
               setIsAdmin(false); // fallback anyway
               setErrorMsg(rpcErr.message);
