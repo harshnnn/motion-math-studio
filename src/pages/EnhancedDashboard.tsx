@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,6 +96,7 @@ const EnhancedDashboard = () => {
   const [supportInput, setSupportInput] = useState('');
   const [loadingSupport, setLoadingSupport] = useState(false);
   const { toast } = useToast();
+  const supportEndRef = useRef<HTMLDivElement | null>(null);
 
   // --- Tab / Navigation Sync ---
   const queryTab = useMemo(() => {
@@ -250,6 +251,31 @@ const EnhancedDashboard = () => {
       toast({ title: 'Message failed', description: 'Could not send support message.', variant: 'destructive' });
     }
   };
+
+  // Auto-scroll support chat when messages change
+  useEffect(() => {
+    if (supportEndRef.current) {
+      supportEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [supportMessages]);
+
+  // Realtime subscription for client support messages
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`support_messages_user_${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'support_messages',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        const newMsg: any = payload.new;
+        setSupportMessages(prev => prev.some(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
+      });
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   if (loading || projectsLoading) {
     return (
@@ -1009,7 +1035,7 @@ const EnhancedDashboard = () => {
                   <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               ))}
-              {/* Scroll anchor removed (no messagesEndRef) */}
+              <div ref={supportEndRef} />
             </div>
             <div className="flex gap-2">
               <Input
