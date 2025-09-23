@@ -2,18 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Extend Supabase types to include the 'admin_login' RPC
-type AdminLoginParams = {
-  p_username: string;
-  p_password: string;
-};
+type AdminLoginParams = { p_username: string; p_password: string; };
 
 declare module '@supabase/supabase-js' {
   interface SupabaseClient {
-    rpc(
-      fn: 'admin_login',
-      params: AdminLoginParams
-    ): Promise<{ data: any; error: any }>;
+    rpc(fn: 'admin_login', params: AdminLoginParams): Promise<{ data: any; error: any }>;
+    rpc(fn: 'debug_admin_context'): Promise<{ data: any; error: any }>;
   }
 }
 
@@ -28,110 +22,141 @@ interface AdminUser {
 interface AdminAuthContextType {
   adminUser: AdminUser | null;
   loading: boolean;
-  signIn: (username: string, password: string) => Promise<{ error: any }>;
+  signIn: (usernameOrEmail: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
+  lastCheck?: any;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export const useAdminAuth = () => {
-  const context = useContext(AdminAuthContext);
-  if (context === undefined) {
-    throw new Error('useAdminAuth must be used within an AdminAuthProvider');
-  }
-  return context;
+  const ctx = useContext(AdminAuthContext);
+  if (!ctx) throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+  return ctx;
 };
 
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastCheck, setLastCheck] = useState<any>(null);
   const { toast } = useToast();
 
+  // Restore cached admin (UI convenience only; still re-validates later)
   useEffect(() => {
-    // Check for stored admin session
-    const checkAdminSession = () => {
-      const adminData = localStorage.getItem('admin_user');
-      if (adminData) {
-        try {
-          const user = JSON.parse(adminData);
-          setAdminUser(user);
-        } catch (error) {
-          localStorage.removeItem('admin_user');
-        }
-      }
+    try {
+      const raw = localStorage.getItem('admin_user');
+      if (raw) setAdminUser(JSON.parse(raw));
+    } catch {
+      localStorage.removeItem('admin_user');
+    } finally {
       setLoading(false);
-    };
-
-    checkAdminSession();
+    }
   }, []);
 
-  const signIn = async (username: string, password: string) => {
+  const ensureAuthSession = async (email: string, password: string) => {
+    // If already signed in as that email, skip
+    const sess = await supabase.auth.getSession();
+    const currentEmail = sess.data.session?.user?.email;
+    if (currentEmail && currentEmail.toLowerCase() === email.toLowerCase()) return;
+
+    // Try normal sign-in
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (!signInErr) return;
+
+    if (signInErr.message.toLowerCase().includes('invalid login')) {
+      // Try creating the auth user (only if email confirmations disabled or you accept pending)
+      const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) throw new Error(`Auth user create failed: ${signUpErr.message}`);
+      // Attempt sign-in again (may already be signed in if auto-confirm)
+      const { error: secondErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (secondErr) {
+        // If email confirmation required, session may not exist yet
+        throw new Error('Check email to confirm admin account before continuing.');
+      }
+    } else {
+      throw new Error(`Auth session error: ${signInErr.message}`);
+    }
+  };
+
+  const verifyAdminMapping = async () => {
+    const { data, error } = await supabase.rpc('debug_admin_context');
+    if (error) throw new Error(`debug_admin_context failed: ${error.message}`);
+    setLastCheck(data);
+    if (!data?.is_admin) {
+      throw new Error('Auth user not mapped to admin_users (user_id missing or mismatch).');
+    }
+  };
+
+  const signIn = async (usernameOrEmail: string, password: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
+      // 1. Custom table authentication
       const { data, error } = await supabase.rpc('admin_login', {
-        p_username: username,
+        p_username: usernameOrEmail,
         p_password: password
       });
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        throw new Error('Invalid credentials');
-      }
+      if (error) throw new Error(`admin_login failed: ${error.message}`);
+      if (!data || data.length === 0) throw new Error('Invalid credentials');
+
       const row = data[0];
-      const adminUser = {
+      const hydrated: AdminUser = {
         id: row.id,
         username: row.username,
         email: row.email,
         last_login: row.last_login,
-        is_active: true
+        is_active: row.is_active
       };
-      // Ensure Supabase auth session (needed for RLS auth.uid())
-      const sessionCheck = await supabase.auth.getSession();
-      const currentEmail = sessionCheck.data.session?.user?.email;
-      if (currentEmail?.toLowerCase() !== adminUser.email.toLowerCase()) {
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: adminUser.email,
-          password
-        });
-        if (signInErr) {
-          console.warn('Supabase auth sign-in for admin failed:', signInErr.message);
-          throw new Error('Admin auth session could not be established');
-        }
-      }
-      setAdminUser(adminUser);
-      localStorage.setItem('admin_user', JSON.stringify(adminUser));
-      toast({
-        title: "Welcome back!",
-        description: "Signed in to admin panel.",
-      });
+
+      if (!hydrated.email) throw new Error('Admin row missing email.');
+
+      // 2. Ensure Supabase auth session (so auth.uid() works for RLS)
+      await ensureAuthSession(hydrated.email, password);
+
+      // 3. Verify mapping (user_id in admin_users)
+      await verifyAdminMapping();
+
+      // 4. Cache in memory + local storage
+      setAdminUser(hydrated);
+      localStorage.setItem('admin_user', JSON.stringify(hydrated));
+
+      toast({ title: 'Admin signed in', description: 'Privileges established.' });
       return { error: null };
-    } catch (error: any) {
+    } catch (err: any) {
+      setAdminUser(null);
+      localStorage.removeItem('admin_user');
       toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid username or password",
-        variant: "destructive",
+        title: 'Admin sign-in failed',
+        description: err.message || 'Unknown error',
+        variant: 'destructive'
       });
-      return { error };
+      return { error: err };
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
-    setAdminUser(null);
-    localStorage.removeItem('admin_user');
-    toast({
-      title: "Signed out",
-      description: "You have been signed out of the admin panel.",
-    });
+    setLoading(true);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    } finally {
+      setAdminUser(null);
+      localStorage.removeItem('admin_user');
+      toast({ title: 'Signed out', description: 'Admin session cleared.' });
+      setLoading(false);
+    }
   };
 
-  const value = {
+  const value: AdminAuthContextType = {
     adminUser,
     loading,
     signIn,
     signOut,
     isAuthenticated: !!adminUser,
+    lastCheck
   };
 
   return (
