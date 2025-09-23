@@ -211,8 +211,8 @@ const SupportInbox = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Conversation {activeUser && `- ${activeUser.slice(0,8)}`}</CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-auto rounded-md border bg-muted/10 p-3 space-y-2 text-sm">
+        <CardContent className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto rounded-md border bg-muted/10 p-3 space-y-2 text-sm min-h-0">
             {activeMessages.length === 0 && <p className="text-xs text-muted-foreground">No messages yet.</p>}
             {activeMessages.map(m => (
               <div key={m.id} className={cn('flex flex-col gap-0.5 rounded p-2', m.sender_id === activeUser ? 'bg-muted/30 mr-auto max-w-[70%]' : 'bg-primary/10 ml-auto max-w-[70%]') }>
@@ -223,7 +223,7 @@ const SupportInbox = () => {
             ))}
             <div ref={bottomRef} />
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex gap-2 flex-shrink-0">
             <Input placeholder="Type reply..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendReply(); } }} />
             <Button onClick={sendReply} disabled={!input.trim() || sending}>Send</Button>
           </div>
