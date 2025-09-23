@@ -48,6 +48,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+const formatCents = (cents?: number | null) =>
+  (cents ?? null) === null ? '' : (cents / 100).toFixed(2);
 
 interface Project {
   id: string;
@@ -416,7 +418,10 @@ const EnhancedDashboard = () => {
     ['under_review', 'accepted', 'assigned_to_animator', 'under_process', 'in_revision', 'payment_pending'].includes(p.status)
   ).length;
   const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const totalSpent = projects.reduce((sum, p) => sum + (p.final_price || p.estimated_price || 0), 0);
+  const totalSpentCents = projects.reduce(
+    (sum, p) => sum + (p.final_price ?? p.estimated_price ?? 0),
+    0
+  );
 
   return (
     <SidebarProvider>
@@ -589,7 +594,7 @@ const EnhancedDashboard = () => {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${totalSpent}</div>
+                  <div className="text-2xl font-bold">${formatCents(totalSpentCents)}</div>
                 </CardContent>
               </Card>
             </div>
@@ -717,7 +722,9 @@ const EnhancedDashboard = () => {
                               </span>
                               {(project.final_price || project.estimated_price) && (
                                 <span className="font-semibold text-primary">
-                                  ${project.final_price || project.estimated_price}
+                                  ${project.final_price != null
+                                      ? formatCents(project.final_price)
+                                      : formatCents(project.estimated_price)}
                                 </span>
                               )}
                             </div>
@@ -805,7 +812,7 @@ const EnhancedDashboard = () => {
                           <CardTitle className="text-xs font-medium tracking-wide text-muted-foreground">Total Spent</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-2xl font-bold">${totalSpent}</p>
+                          <p className="text-2xl font-bold">${formatCents(totalSpentCents)}</p>
                         </CardContent>
                       </Card>
                       <Card>
@@ -843,12 +850,12 @@ const EnhancedDashboard = () => {
                               <CardContent className="space-y-3">
                                 <div className="flex justify-between text-xs text-muted-foreground">
                                   <span>Estimated</span>
-                                  <span>${p.estimated_price || 0}</span>
+                                  <span>${formatCents(p.estimated_price || 0)}</span>
                                 </div>
                                 {p.final_price && (
                                   <div className="flex justify-between text-xs text-muted-foreground">
                                     <span>Final</span>
-                                    <span>${p.final_price}</span>
+                                    <span>${formatCents(p.final_price)}</span>
                                   </div>
                                 )}
                                 <Button size="sm" className="w-full" variant="secondary">
@@ -968,14 +975,18 @@ const EnhancedDashboard = () => {
                   {selectedProject.estimated_price && (
                     <div>
                       <h4 className="font-medium mb-1">Estimated Price</h4>
-                      <p className="text-lg font-semibold text-primary">${selectedProject.estimated_price}</p>
+                      <p className="text-lg font-semibold text-primary">
+                        ${formatCents(selectedProject.estimated_price)}
+                      </p>
                     </div>
                   )}
                   
                   {selectedProject.final_price && (
                     <div>
                       <h4 className="font-medium mb-1">Final Price</h4>
-                      <p className="text-lg font-semibold text-primary">${selectedProject.final_price}</p>
+                      <p className="text-lg font-semibold text-primary">
+                        ${formatCents(selectedProject.final_price)}
+                      </p>
                     </div>
                   )}
                 </div>
