@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,6 @@ import {
   Filter,
   SortAsc,
   Eye,
-  MessageSquare,
   Download,
   Copy,
   Star,
@@ -91,12 +90,7 @@ const EnhancedDashboard = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [messageInput, setMessageInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [projectMessages, setProjectMessages] = useState<Record<string, any[]>>({});
-  const [loadingMessages, setLoadingMessages] = useState(false);
   const [notificationsUnavailable, setNotificationsUnavailable] = useState(false);
-  const [messagesUnavailable, setMessagesUnavailable] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportMessages, setSupportMessages] = useState<any[]>([]);
   const [supportInput, setSupportInput] = useState('');
@@ -219,52 +213,6 @@ const EnhancedDashboard = () => {
     }
   };
 
-  // --- Project Messaging ---
-  const loadMessagesForProject = async (projectId: string) => {
-    if (!user || messagesUnavailable) return;
-    try {
-      setLoadingMessages(true);
-      const { data, error } = await supabase
-        .from('project_messages')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      setProjectMessages(prev => ({ ...prev, [projectId]: data || [] }));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-    } catch (e: any) {
-      if (e?.code === 'PGRST205' || /project_messages/.test(e?.message || '')) {
-        setMessagesUnavailable(true);
-      } else {
-        console.error('loadMessagesForProject error', e);
-      }
-    } finally {
-      setLoadingMessages(false);
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!selectedProject || !messageInput.trim() || !user) return;
-    const content = messageInput.trim();
-    setMessageInput('');
-    try {
-      const { data, error } = await supabase
-        .from('project_messages')
-        .insert({ project_id: selectedProject.id, sender_id: user.id, content })
-        .select('*')
-        .single();
-      if (error) throw error;
-      setProjectMessages(prev => ({
-        ...prev,
-        [selectedProject.id]: [...(prev[selectedProject.id] || []), data]
-      }));
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 20);
-    } catch (e) {
-      console.error('sendMessage error', e);
-      toast({ title: 'Message failed', description: 'Could not send message.', variant: 'destructive' });
-    }
-  };
-
   const fetchSupportMessages = async () => {
     if (!user) return;
     try {
@@ -276,7 +224,7 @@ const EnhancedDashboard = () => {
         .order('created_at', { ascending: true });
       if (error) throw error;
       setSupportMessages(data || []);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+  // (scroll removed: project messaging no longer used)
     } catch (e) {
       console.error('fetchSupportMessages error', e);
     } finally {
@@ -296,7 +244,7 @@ const EnhancedDashboard = () => {
         .single();
       if (error) throw error;
       setSupportMessages(prev => [...prev, data]);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 20);
+  // (scroll removed)
     } catch (e) {
       console.error('sendSupportMessage error', e);
       toast({ title: 'Message failed', description: 'Could not send support message.', variant: 'destructive' });
@@ -542,7 +490,7 @@ const EnhancedDashboard = () => {
                         </div>
                         <p className="line-clamp-2 mt-0.5 text-muted-foreground/80">{n.message}</p>
                         {n.project_id && (
-                          <Button variant="link" size="sm" className="px-0 h-auto mt-1" onClick={(e) => { e.stopPropagation(); const proj = projects.find(p => p.id === n.project_id); if (proj) { setSelectedProject(proj); loadMessagesForProject(proj.id); }}}>
+                          <Button variant="link" size="sm" className="px-0 h-auto mt-1" onClick={(e) => { e.stopPropagation(); const proj = projects.find(p => p.id === n.project_id); if (proj) { setSelectedProject(proj); }}}>
                             Open Project
                           </Button>
                         )}
@@ -628,153 +576,137 @@ const EnhancedDashboard = () => {
                 <TabsTrigger value="payments">Payments</TabsTrigger>
                 <TabsTrigger value="quick-actions">Quick Actions</TabsTrigger>
               </TabsList>
-
-              {/* Projects Tab */}
-              <TabsContent value="projects" className="space-y-6">
-                {/* Filters and Search */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-wrap gap-4 items-center">
-                      <div className="flex-1 min-w-[200px]">
-                        <Input
-                          placeholder="Search projects..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                      
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-[150px]">
-                          <Filter className="h-4 w-4 mr-2" />
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="under_review">Under Review</SelectItem>
-                          <SelectItem value="accepted">Accepted</SelectItem>
-                          <SelectItem value="assigned_to_animator">Assigned</SelectItem>
-                          <SelectItem value="under_process">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-[150px]">
-                          <SortAsc className="h-4 w-4 mr-2" />
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="created_at">Created Date</SelectItem>
-                          <SelectItem value="deadline">Deadline</SelectItem>
-                          <SelectItem value="title">Title</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Projects Grid */}
-                {filteredProjects.length === 0 ? (
+                <TabsContent value="projects" className="space-y-6">
                   <Card>
-                    <CardContent className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">
-                        {projects.length === 0 ? "You haven't submitted any projects yet." : "No projects match your filters."}
-                      </p>
-                      <Button asChild>
-                        <Link to="/request">Submit Your First Project</Link>
-                      </Button>
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Search projects..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </div>
+                        <Select value={filterStatus} onValueChange={setFilterStatus}>
+                          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="under_review">Under Review</SelectItem>
+                            <SelectItem value="accepted">Accepted</SelectItem>
+                            <SelectItem value="assigned_to_animator">Assigned</SelectItem>
+                            <SelectItem value="payment_pending">Payment Pending</SelectItem>
+                            <SelectItem value="under_process">In Process</SelectItem>
+                            <SelectItem value="in_revision">In Revision</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Sort By" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="created_at">Created Date</SelectItem>
+                            <SelectItem value="deadline">Deadline</SelectItem>
+                            <SelectItem value="title">Title</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </CardContent>
                   </Card>
-                ) : (
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredProjects.map((project) => (
-                      <Card key={project.id} className="hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <CardTitle className="text-lg flex items-center gap-2">
-                                {pinnedProjects.has(project.id) && (
-                                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                                )}
-                                {project.title}
-                              </CardTitle>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge className={`${getStatusColor(project.status)} border`}>
-                                  {getStatusIcon(project.status)}
-                                  <span className="ml-1">{formatStatus(project.status)}</span>
-                                </Badge>
-                              </div>
-                            </div>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <span className="sr-only">Actions</span>
-                                  •••
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setSelectedProject(project)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => togglePin(project.id)}>
-                                  {pinnedProjects.has(project.id) ? (
-                                    <>
-                                      <StarOff className="h-4 w-4 mr-2" />
-                                      Unpin
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Star className="h-4 w-4 mr-2" />
-                                      Pin
-                                    </>
+
+                  {filteredProjects.length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-8">
+                        <p className="text-muted-foreground mb-4">
+                          {projects.length === 0 ? "You haven't submitted any projects yet." : "No projects match your filters."}
+                        </p>
+                        <Button asChild>
+                          <Link to="/request">Submit Your First Project</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {filteredProjects.map((project) => (
+                        <Card key={project.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  {pinnedProjects.has(project.id) && (
+                                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
                                   )}
-                                </DropdownMenuItem>
-                                {/* Duplicate removed as requested */}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </CardHeader>
-                        
-                        <CardContent className="space-y-4">
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {project.description}
-                          </p>
-                          
-                          {/* Progress Bar */}
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Progress</span>
-                              <span>{getProgressPercentage(project.status)}%</span>
+                                  {project.title}
+                                </CardTitle>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge className={`${getStatusColor(project.status)} border`}>
+                                    {getStatusIcon(project.status)}
+                                    <span className="ml-1">{formatStatus(project.status)}</span>
+                                  </Badge>
+                                </div>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <span className="sr-only">Actions</span>
+                                    •••
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setSelectedProject(project)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => togglePin(project.id)}>
+                                    {pinnedProjects.has(project.id) ? (
+                                      <>
+                                        <StarOff className="h-4 w-4 mr-2" />
+                                        Unpin
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Star className="h-4 w-4 mr-2" />
+                                        Pin
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                            <Progress value={getProgressPercentage(project.status)} />
-                          </div>
-                          
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">
-                              {formatAnimationType(project.animation_type)}
-                            </span>
-                            {(project.final_price || project.estimated_price) && (
-                              <span className="font-semibold text-primary">
-                                ${project.final_price || project.estimated_price}
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {project.description}
+                            </p>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>Progress</span>
+                                <span>{getProgressPercentage(project.status)}%</span>
+                              </div>
+                              <Progress value={getProgressPercentage(project.status)} />
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">
+                                {formatAnimationType(project.animation_type)}
                               </span>
-                            )}
-                          </div>
-                          
-                          <div className="text-xs text-muted-foreground">
-                            Created: {new Date(project.created_at).toLocaleDateString()}
-                            {project.deadline && (
-                              <div>Deadline: {new Date(project.deadline).toLocaleDateString()}</div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
+                              {(project.final_price || project.estimated_price) && (
+                                <span className="font-semibold text-primary">
+                                  ${project.final_price || project.estimated_price}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Created: {new Date(project.created_at).toLocaleDateString()}
+                              {project.deadline && (
+                                <div>Deadline: {new Date(project.deadline).toLocaleDateString()}</div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
 
               {/* Estimates Tab */}
               <TabsContent value="estimates" className="space-y-6">
@@ -1043,13 +975,7 @@ const EnhancedDashboard = () => {
                 {selectedProject.status === 'payment_pending' && (
                   <Button>Make Payment</Button>
                 )}
-                <Button variant="outline" onClick={() => {
-                  loadMessagesForProject(selectedProject.id);
-                  setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder="Type a message..."]')?.focus(), 50);
-                }}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Conversation
-                </Button>
+                {/* Conversation feature removed */}
                 <Button variant="outline" disabled={selectedProject.status !== 'completed'} className={cn(selectedProject.status !== 'completed' && 'opacity-50 cursor-not-allowed backdrop-blur-sm') }>
                   <Download className="h-4 w-4 mr-2" />
                   {selectedProject.status === 'completed' ? 'Download' : 'Download (locked)'}
@@ -1057,36 +983,7 @@ const EnhancedDashboard = () => {
                 {/* Duplicate removed in modal */}
               </div>
 
-              {/* Project Conversation */}
-              <div className="border-t pt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">Project Conversation</h4>
-                  <Button variant="outline" size="sm" onClick={() => loadMessagesForProject(selectedProject.id)}>Refresh</Button>
-                </div>
-                <div className="max-h-64 overflow-auto rounded-md border bg-muted/10 p-3 space-y-2 text-sm">
-                  {loadingMessages && <p className="text-xs text-muted-foreground">Loading messages...</p>}
-                  {(!loadingMessages && (projectMessages[selectedProject.id]?.length || 0) === 0) && (
-                    <p className="text-xs text-muted-foreground">No messages yet. Start the conversation.</p>
-                  )}
-                  {(projectMessages[selectedProject.id] || []).map(m => (
-                    <div key={m.id} className={cn('flex flex-col gap-0.5 rounded p-2', m.sender_id === user.id ? 'bg-primary/10 ml-auto max-w-[80%]' : 'bg-muted/30 mr-auto max-w-[80%]') }>
-                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">{m.sender_id === user.id ? 'You' : 'Admin'}</span>
-                      <p>{m.content}</p>
-                      <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  />
-                  <Button onClick={sendMessage} disabled={!messageInput.trim()}>Send</Button>
-                </div>
-              </div>
+              {/* Project conversation feature removed */}
             </div>
           )}
         </DialogContent>
@@ -1112,7 +1009,7 @@ const EnhancedDashboard = () => {
                   <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
+              {/* Scroll anchor removed (no messagesEndRef) */}
             </div>
             <div className="flex gap-2">
               <Input
