@@ -34,7 +34,12 @@ const SupportInbox = () => {
       if (!authUser) { setIsAdmin(false); return; }
       const { data: profile } = await supabase.from('profiles').select('email').eq('user_id', authUser.id).maybeSingle();
       if (!profile?.email) { setIsAdmin(false); return; }
-      const { data: adminRow } = await supabase.from('admin_users').select('email,is_active').eq('email', profile.email).eq('is_active', true).maybeSingle();
+      const { data: adminRow } = await supabase
+        .from('admin_users')
+        .select('email,is_active')
+        .eq('is_active', true)
+        .filter('email','ilike', profile.email) // case-insensitive
+        .maybeSingle();
       setIsAdmin(!!adminRow);
     } catch {
       setIsAdmin(false);
@@ -44,11 +49,20 @@ const SupportInbox = () => {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('support_messages')
-        .select('*')
-        .order('created_at', { ascending: true });
-      if (error) throw error;
+      let data: SupportMessage[] | null = null;
+      if (isAdmin) {
+        // Use RPC to bypass any lingering RLS mismatches
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_list_support_messages');
+        if (rpcErr) throw rpcErr;
+        data = rpcData as any;
+      } else {
+        const { data: selData, error: selErr } = await supabase
+          .from('support_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (selErr) throw selErr;
+        data = selData;
+      }
       const grouped: Record<string, SupportMessage[]> = {};
       (data || []).forEach(m => {
         grouped[m.user_id] = grouped[m.user_id] || [];
@@ -72,15 +86,23 @@ const SupportInbox = () => {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  // First check admin, then load messages (since load depends on isAdmin)
   useEffect(() => {
-    checkAdmin();
-    loadMessages();
-    const intv = setInterval(loadMessages, 20000); // periodic fallback refresh
-    return () => clearInterval(intv);
+    (async () => {
+      await checkAdmin();
+    })();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin === null) return; // wait until admin status resolved
+    loadMessages();
+    const intv = setInterval(loadMessages, 20000);
+    return () => clearInterval(intv);
+  }, [isAdmin]);
 
   // Realtime subscription for all support messages (admin scope)
   useEffect(() => {
+    if (isAdmin === null) return; // wait
     const channel = supabase
       .channel('support_messages_admin')
       .on('postgres_changes', {
@@ -92,7 +114,7 @@ const SupportInbox = () => {
         setThreads(prev => {
           const existing = prev.find(t => t.user_id === newMsg.user_id);
           if (existing) {
-            if (existing.messages.some(m => m.id === newMsg.id)) return prev; // dedupe race
+            if (existing.messages.some(m => m.id === newMsg.id)) return prev;
             const updated = prev.map(t => t.user_id === newMsg.user_id
               ? { ...t, messages: [...t.messages, newMsg], last_message_at: newMsg.created_at }
               : t);
@@ -102,12 +124,11 @@ const SupportInbox = () => {
             return [...prev, newThread].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
           }
         });
-        // Auto-select first thread if none active
         setActiveUser(cur => cur || newMsg.user_id);
       });
     channel.subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
