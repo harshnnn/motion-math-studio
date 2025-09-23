@@ -50,7 +50,7 @@ const ProjectStatusManager: React.FC<ProjectStatusManagerProps> = ({ project, on
       const updates: any = { status };
       
       if (finalPrice && !project.final_price) {
-        updates.final_price = parseInt(finalPrice) * 100;
+        updates.final_price = parseInt(finalPrice);
       }
       
       if (notes.trim()) {
