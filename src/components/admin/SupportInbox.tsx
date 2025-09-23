@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,49 @@ const SupportInbox = () => {
     }
   };
 
-  useEffect(() => { loadMessages(); const intv = setInterval(loadMessages, 20000); return () => clearInterval(intv); }, []);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    loadMessages();
+    const intv = setInterval(loadMessages, 20000); // periodic fallback refresh
+    return () => clearInterval(intv);
+  }, []);
+
+  // Realtime subscription for all support messages (admin scope)
+  useEffect(() => {
+    const channel = supabase
+      .channel('support_messages_admin')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'support_messages'
+      }, (payload) => {
+        const newMsg = payload.new as SupportMessage;
+        setThreads(prev => {
+          // Insert into correct thread or create it
+            const existing = prev.find(t => t.user_id === newMsg.user_id);
+            if (existing) {
+              const updated = prev.map(t => t.user_id === newMsg.user_id
+                ? { ...t, messages: [...t.messages, newMsg], last_message_at: newMsg.created_at }
+                : t);
+              // resort threads
+              return [...updated].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+            } else {
+              const newThread: ThreadGroup = { user_id: newMsg.user_id, messages: [newMsg], last_message_at: newMsg.created_at };
+              const updated = [...prev, newThread].sort((a,b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+              return updated;
+            }
+        });
+        // Auto-select first thread if none active
+        setActiveUser(cur => cur || newMsg.user_id);
+      });
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [threads, activeUser]);
 
   const activeMessages = threads.find(t => t.user_id === activeUser)?.messages || [];
 
@@ -112,6 +154,7 @@ const SupportInbox = () => {
                 <span className="text-[10px] text-muted-foreground/60">{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             ))}
+            <div ref={bottomRef} />
           </div>
           <div className="mt-3 flex gap-2">
             <Input placeholder="Type reply..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendReply(); } }} />
