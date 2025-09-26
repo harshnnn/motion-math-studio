@@ -14,25 +14,28 @@ import { useToast } from '@/hooks/use-toast';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 interface Project {
+  notes: string;
+  duration_seconds: any;
+  deadline: string | null;
+  final_price: any;
+  estimated_price: any;
+  created_at: string | null;
+  updated_at: string | null;
+  script_content: any;
+  reference_materials: any;
+  style_preferences: any;
+  budget_max: string;
+  budget_min: null;
   id: string;
   title: string;
   description: string;
   animation_type: string;
   status: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  estimated_price?: number | null;
-  final_price?: number | null;
-  notes?: string | null;
-  style_preferences?: string | null;
-  duration_seconds?: number | null;
-  // Newly surfaced fields
-  deadline?: string | null;
-  budget_min?: number | null;
-  budget_max?: number | null;
-  script_content?: string | null;
-  reference_materials?: string | null;
+  // New fields
+  deliverable_path?: string | null;
+  deliverable_mime?: string | null;
+  deliverable_size?: number | null;
+  delivered_at?: string | null;
 }
 
 const STATUSES = [
@@ -66,7 +69,9 @@ const formatDateTime = (d?: string | null) => d ? new Date(d).toLocaleString() :
 const AdminProjects = () => {
   const { isAuthenticated } = useAdminAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null); // if not present
+  const [deliverableFile, setDeliverableFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [finalPrice, setFinalPrice] = useState('');
@@ -190,6 +195,49 @@ const AdminProjects = () => {
       return matchesSearch && matchesStatus && matchesType;
     });
   }, [projects, search, statusFilter, typeFilter]);
+
+  const uploadDeliverable = async () => {
+    if (!selectedProject || !deliverableFile) return;
+    setUploading(true);
+    try {
+      const file = deliverableFile;
+      const path = `${selectedProject.id}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage
+        .from('project-deliverables')
+        .upload(path, file, { contentType: file.type, upsert: true });
+      if (upErr) throw upErr;
+
+      const { error: updErr } = await supabase
+        .from('projects')
+        .update({
+          deliverable_path: path,
+          deliverable_mime: file.type,
+          deliverable_size: file.size,
+          delivered_at: new Date().toISOString(),
+          status: selectedProject.status === 'completed' ? 'completed' : 'completed'
+        })
+        .eq('id', selectedProject.id);
+      if (updErr) throw updErr;
+
+      // Optimistic refresh: update the item in place if you keep a list in state
+      optimisticUpdate(selectedProject.id, {
+        deliverable_path: path,
+        deliverable_mime: file.type,
+        deliverable_size: file.size,
+        delivered_at: new Date().toISOString(),
+        status: selectedProject.status === 'completed' ? 'completed' : 'completed'
+      });
+
+      setDeliverableFile(null);
+      setSelectedProject(null);
+      toast({ title: 'Deliverable uploaded', description: 'Client can now download.' });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: 'Upload failed', description: e.message || 'Try again.', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (!isAuthenticated) return <div className="p-6 text-sm">Unauthorized</div>;
 
@@ -536,6 +584,28 @@ const AdminProjects = () => {
                                 <p className="text-xs text-muted-foreground">
                                   Status updates are applied immediately.
                                 </p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => setSelectedProject(project)}>
+                                Upload Deliverable
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Upload Final Video</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-3">
+                                <Input type="file" accept="video/*" onChange={(e) => setDeliverableFile(e.target.files?.[0] || null)} />
+                                <Button className="w-full" disabled={!deliverableFile || uploading} onClick={uploadDeliverable}>
+                                  {uploading ? 'Uploading…' : 'Upload & Mark Completed'}
+                                </Button>
+                                {project.deliverable_path && (
+                                  <p className="text-xs text-muted-foreground">Existing: {project.deliverable_path.split('/').pop()}</p>
+                                )}
                               </div>
                             </DialogContent>
                           </Dialog>
