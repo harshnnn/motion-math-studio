@@ -69,8 +69,11 @@ const formatDateTime = (d?: string | null) => d ? new Date(d).toLocaleString() :
 const AdminProjects = () => {
   const { isAuthenticated } = useAdminAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null); // if not present
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deliverableFile, setDeliverableFile] = useState<File | null>(null);
+  const [deliverableOpen, setDeliverableOpen] = useState(false); // NEW
+  const [fileList, setFileList] = useState<any[]>([]);           // NEW
+  const [filesLoading, setFilesLoading] = useState(false);       // NEW
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
@@ -196,6 +199,74 @@ const AdminProjects = () => {
     });
   }, [projects, search, statusFilter, typeFilter]);
 
+  // Helpers for deliverables
+  const getFileName = (path?: string | null) => (path ? path.split('/').pop() : ''); // NEW
+  const humanFileSize = (bytes?: number) => {                                        // NEW
+    if (bytes == null) return '-';
+    const thresh = 1024;
+    if (Math.abs(bytes) < thresh) return `${bytes} B`;
+    const units = ['KB','MB','GB','TB'];
+    let u = -1;
+    do { bytes /= thresh; ++u; } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return `${bytes.toFixed(1)} ${units[u]}`;
+  };
+
+  const loadDeliverables = async (proj: Project) => {                                 // NEW
+    setFilesLoading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from('project-deliverables')
+        .list(proj.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+      if (error) throw error;
+      setFileList(data || []);
+    } catch (e: any) {
+      console.error('list deliverables error', e);
+      toast({ title: 'Failed to list files', description: e.message, variant: 'destructive' });
+      setFileList([]);
+    } finally {
+      setFilesLoading(false);
+    }
+  };
+
+  const openSigned = async (path: string) => {                                        // NEW
+    const { data, error } = await supabase.storage
+      .from('project-deliverables')
+      .createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) {
+      toast({ title: 'Preview failed', description: error?.message || 'No URL', variant: 'destructive' });
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
+  };
+
+  const setCurrentDeliverable = async (proj: Project, path: string) => {              // NEW
+    const { error } = await supabase
+      .from('projects')
+      .update({ deliverable_path: path, delivered_at: new Date().toISOString(), status: 'completed' })
+      .eq('id', proj.id);
+    if (error) {
+      toast({ title: 'Failed to set current', description: error.message, variant: 'destructive' });
+      return;
+    }
+    optimisticUpdate(proj.id, { deliverable_path: path, delivered_at: new Date().toISOString(), status: 'completed' });
+    toast({ title: 'Deliverable selected', description: getFileName(path) });
+  };
+
+  const deleteDeliverable = async (proj: Project, path: string) => {                  // NEW
+    const { error } = await supabase.storage.from('project-deliverables').remove([path]);
+    if (error) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    // If the deleted file was the current one, clear it on the project
+    if (proj.deliverable_path === path) {
+      await supabase.from('projects').update({ deliverable_path: null }).eq('id', proj.id);
+      optimisticUpdate(proj.id, { deliverable_path: null });
+    }
+    await loadDeliverables(proj);
+    toast({ title: 'File deleted' });
+  };
+
   const uploadDeliverable = async () => {
     if (!selectedProject || !deliverableFile) return;
     setUploading(true);
@@ -214,23 +285,22 @@ const AdminProjects = () => {
           deliverable_mime: file.type,
           deliverable_size: file.size,
           delivered_at: new Date().toISOString(),
-          status: selectedProject.status === 'completed' ? 'completed' : 'completed'
+          status: 'completed'
         })
         .eq('id', selectedProject.id);
       if (updErr) throw updErr;
 
-      // Optimistic refresh: update the item in place if you keep a list in state
       optimisticUpdate(selectedProject.id, {
         deliverable_path: path,
         deliverable_mime: file.type,
         deliverable_size: file.size,
         delivered_at: new Date().toISOString(),
-        status: selectedProject.status === 'completed' ? 'completed' : 'completed'
+        status: 'completed'
       });
 
       setDeliverableFile(null);
-      setSelectedProject(null);
-      toast({ title: 'Deliverable uploaded', description: 'Client can now download.' });
+      await loadDeliverables(selectedProject); // keep dialog open and show the newly uploaded file
+      toast({ title: 'Deliverable uploaded', description: getFileName(path) });
     } catch (e: any) {
       console.error(e);
       toast({ title: 'Upload failed', description: e.message || 'Try again.', variant: 'destructive' });
@@ -588,7 +658,19 @@ const AdminProjects = () => {
                             </DialogContent>
                           </Dialog>
 
-                          <Dialog>
+                          <Dialog
+                            open={deliverableOpen && selectedProject?.id === project.id}
+                            onOpenChange={(open) => {
+                              setDeliverableOpen(open);
+                              if (open) {
+                                setSelectedProject(project);
+                                loadDeliverables(project);
+                              } else {
+                                setDeliverableFile(null);
+                                setFileList([]);
+                              }
+                            }}
+                          >
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" onClick={() => setSelectedProject(project)}>
                                 Upload Deliverable
@@ -596,15 +678,93 @@ const AdminProjects = () => {
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Upload Final Video</DialogTitle>
+                                <DialogTitle>Final Deliverable</DialogTitle>
+                                <DialogDescription>{project.title}</DialogDescription>
                               </DialogHeader>
+
+                              {/* Current selection */}
+                              <div className="space-y-2 rounded-md border p-3">
+                                <p className="text-sm font-medium">Current file</p>
+                                {project.deliverable_path ? (
+                                  <div className="flex items-center justify-between text-sm">
+                                    <div className="space-y-1">
+                                      <div>{getFileName(project.deliverable_path)}</div>
+                                      {project.delivered_at && (
+                                        <div className="text-xs text-muted-foreground">
+                                          Delivered: {formatDateTime(project.delivered_at)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" size="sm" onClick={() => openSigned(project.deliverable_path!)}>
+                                        Preview
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => deleteDeliverable(project, project.deliverable_path!)}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No file selected yet.</p>
+                                )}
+                              </div>
+
+                              {/* Replace / Upload new */}
                               <div className="space-y-3">
-                                <Input type="file" accept="video/*" onChange={(e) => setDeliverableFile(e.target.files?.[0] || null)} />
+                                <p className="text-sm font-medium">Upload a new file (will become current)</p>
+                                <Input
+                                  type="file"
+                                  accept="video/*"
+                                  onChange={(e) => setDeliverableFile(e.target.files?.[0] || null)}
+                                />
                                 <Button className="w-full" disabled={!deliverableFile || uploading} onClick={uploadDeliverable}>
-                                  {uploading ? 'Uploading…' : 'Upload & Mark Completed'}
+                                  {uploading ? 'Uploading…' : 'Upload & Set as Current'}
                                 </Button>
-                                {project.deliverable_path && (
-                                  <p className="text-xs text-muted-foreground">Existing: {project.deliverable_path.split('/').pop()}</p>
+                              </div>
+
+                              {/* All files in this project’s folder */}
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium">All files for this project</p>
+                                {filesLoading ? (
+                                  <p className="text-sm text-muted-foreground">Loading…</p>
+                                ) : fileList.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">No files found.</p>
+                                ) : (
+                                  <div className="max-h-56 overflow-y-auto rounded-md border">
+                                    <ul className="divide-y">
+                                      {fileList.map((f) => {
+                                        const candidatePath = `${project.id}/${f.name}`;
+                                        const isCurrent = candidatePath === project.deliverable_path;
+                                        return (
+                                          <li key={f.name} className="flex items-center justify-between p-2 text-sm">
+                                            <div className="space-y-0.5">
+                                              <div className="font-medium">{f.name}{isCurrent && ' • (current)'}</div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {humanFileSize(f.metadata?.size ?? f.size)} · {formatDateTime(f.created_at || f.updated_at)}
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button variant="outline" size="sm" onClick={() => openSigned(candidatePath)}>
+                                                Preview
+                                              </Button>
+                                              {!isCurrent && (
+                                                <Button variant="outline" size="sm" onClick={() => setCurrentDeliverable(project, candidatePath)}>
+                                                  Set current
+                                                </Button>
+                                              )}
+                                              <Button variant="outline" size="sm" onClick={() => deleteDeliverable(project, candidatePath)}>
+                                                Delete
+                                              </Button>
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  </div>
                                 )}
                               </div>
                             </DialogContent>
