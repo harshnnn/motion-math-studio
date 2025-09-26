@@ -407,15 +407,42 @@ const EnhancedDashboard = () => {
   };
 
   const downloadDeliverable = async (p: Project) => {
-    if (!p.deliverable_path) return;
-    const { data, error } = await supabase.storage
-      .from('project-deliverables')
-      .createSignedUrl(p.deliverable_path, 60); // seconds
-    if (error || !data?.signedUrl) {
-      toast({ title: 'Download failed', description: 'Please try again.', variant: 'destructive' });
-      return;
+    try {
+      // Try explicit path saved on the project
+      let path = p.deliverable_path || '';
+
+      // Fallback: look up the most recent file inside the project's folder
+      if (!path) {
+        const { data: files, error: listErr } = await supabase.storage
+          .from('project-deliverables')
+          .list(p.id, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+        if (listErr) throw listErr;
+
+        if (!files || files.length === 0) {
+          toast({
+            title: 'No file found',
+            description: 'Deliverable not attached yet. Please check back later.',
+            variant: 'destructive'
+          });
+          return;
+        }
+        path = `${p.id}/${files[0].name}`;
+      }
+
+      const { data, error } = await supabase.storage
+        .from('project-deliverables')
+        .createSignedUrl(path, 60); // seconds
+      if (error || !data?.signedUrl) throw error || new Error('No signed URL returned');
+
+      window.open(data.signedUrl, '_blank');
+    } catch (e: any) {
+      console.error('downloadDeliverable error', e);
+      toast({
+        title: 'Download failed',
+        description: e?.message || 'Please try again.',
+        variant: 'destructive'
+      });
     }
-    window.open(data.signedUrl, '_blank');
   };
 
   const sidebarItems: { title: string; icon: any; tab: string; description?: string }[] = [
@@ -1028,12 +1055,14 @@ const EnhancedDashboard = () => {
                 {/* Conversation feature removed */}
                 <Button
                   variant="outline"
-                  disabled={selectedProject.status !== 'completed' || !selectedProject.deliverable_path}
+                  disabled={selectedProject.status !== 'completed'}
                   onClick={() => selectedProject && downloadDeliverable(selectedProject)}
-                  className={cn((selectedProject.status !== 'completed' || !selectedProject.deliverable_path) && 'opacity-50 cursor-not-allowed')}
+                  className={cn(
+                    selectedProject.status !== 'completed' && 'opacity-50 cursor-not-allowed'
+                  )}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {selectedProject.status === 'completed' ? 'Download' : 'Download (locked)'}
+                  Download
                 </Button>
                 {/* Duplicate removed in modal */}
               </div>
