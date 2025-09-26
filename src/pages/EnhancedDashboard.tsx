@@ -65,6 +65,7 @@ interface Project {
   duration_seconds?: number;
   notes?: string;
   style_preferences?: string;
+  deliverable_path?: string | null; // add
 }
 
 interface QuickEstimate {
@@ -403,6 +404,18 @@ const EnhancedDashboard = () => {
       estimated_price: estimate.estimated_price.toString()
     });
     navigate(`/request?${params.toString()}`);
+  };
+
+  const downloadDeliverable = async (p: Project) => {
+    if (!p.deliverable_path) return;
+    const { data, error } = await supabase.storage
+      .from('project-deliverables')
+      .createSignedUrl(p.deliverable_path, 60); // seconds
+    if (error || !data?.signedUrl) {
+      toast({ title: 'Download failed', description: 'Please try again.', variant: 'destructive' });
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
   };
 
   const sidebarItems: { title: string; icon: any; tab: string; description?: string }[] = [
@@ -1013,7 +1026,12 @@ const EnhancedDashboard = () => {
                   <Button>Make Payment</Button>
                 )}
                 {/* Conversation feature removed */}
-                <Button variant="outline" disabled={selectedProject.status !== 'completed'} className={cn(selectedProject.status !== 'completed' && 'opacity-50 cursor-not-allowed backdrop-blur-sm') }>
+                <Button
+                  variant="outline"
+                  disabled={selectedProject.status !== 'completed' || !selectedProject.deliverable_path}
+                  onClick={() => selectedProject && downloadDeliverable(selectedProject)}
+                  className={cn((selectedProject.status !== 'completed' || !selectedProject.deliverable_path) && 'opacity-50 cursor-not-allowed')}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   {selectedProject.status === 'completed' ? 'Download' : 'Download (locked)'}
                 </Button>
