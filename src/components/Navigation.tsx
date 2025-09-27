@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Navigation = () => {
   const { user, loading, signOut } = useAuth();
@@ -28,6 +29,9 @@ const Navigation = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
+          {/* Theme toggle always visible and appears to the left of auth button */}
+          <ThemeToggle />
+
           {loading ? (
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
           ) : user ? (
