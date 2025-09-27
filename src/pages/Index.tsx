@@ -10,6 +10,8 @@ import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { ServicesSection } from '@/components/sections/ServicesSection';
+import { ContactSection } from '@/components/sections/ContactSection';
 
 const Index = () => {
   const { user } = useAuth();
@@ -44,7 +46,7 @@ const Index = () => {
           title: "Request submitted!",
           description: "We'll get back to you within 24 hours.",
         });
-        
+
         // Reset form
         setFormData({ email: '', budget: '', description: '' });
       } else {
@@ -91,14 +93,14 @@ const Index = () => {
                   <br />
                   <span className="text-foreground">to Motion</span>
                 </h1>
-                
+
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
-                  Formula animations, research visuals & publication-grade videos 
-                  made from your script. Transform complex mathematical concepts 
+                  Formula animations, research visuals & publication-grade videos
+                  made from your script. Transform complex mathematical concepts
                   into elegant animated visualizations.
                 </p>
               </div>
-              
+
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="hero" size="lg" className="text-lg px-8 py-4" asChild>
@@ -108,20 +110,20 @@ const Index = () => {
                   <Link to="/request">Submit Request</Link>
                 </Button>
               </div>
-              
+
               {/* Trust Badge */}
               <p className="text-sm text-muted-foreground">
                 Trusted by researchers, educators & content creators
               </p>
             </div>
-            
+
             {/* Right Column - Demo Video */}
             <div className="relative">
               <HeroDemo />
             </div>
           </div>
         </div>
-        
+
         {/* Background Mathematical Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 right-20 text-9xl text-primary/5 font-serif">∫</div>
@@ -138,11 +140,11 @@ const Index = () => {
               Mathematical Animation Services
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              From simple formula visualizations to complex research animations, 
+              From simple formula visualizations to complex research animations,
               we bring your mathematical concepts to life with precision and elegance.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard
               icon="π"
@@ -156,7 +158,7 @@ const Index = () => {
                 "MP4 & WebM formats"
               ]}
             />
-            
+
             <FeatureCard
               icon="∑"
               title="Math Objects & 3D"
@@ -169,7 +171,7 @@ const Index = () => {
                 "Custom styling options"
               ]}
             />
-            
+
             <FeatureCard
               icon="∞"
               title="Full Research Animations"
@@ -185,6 +187,12 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* NEW: Services Section */}
+      <div className="py-20">
+        <ServicesSection />
+      </div>
+
 
       {/* Pricing Strip */}
       <section className="px-6 py-20">
@@ -202,7 +210,7 @@ const Index = () => {
           <p className="text-lg text-muted-foreground mb-8">
             Submit your mathematical concept and get a custom quote within 24 hours
           </p>
-          
+
           <div className="bg-card border border-border/50 rounded-2xl p-8">
             <form onSubmit={handleQuickSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
@@ -223,7 +231,7 @@ const Index = () => {
                   className={!user ? "" : "md:col-span-2"}
                 />
               </div>
-              
+
               <Textarea
                 placeholder="Describe your mathematical concept or provide your script..."
                 rows={4}
@@ -231,11 +239,11 @@ const Index = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 required
               />
-              
-              <Button 
-                type="submit" 
-                variant="hero" 
-                size="lg" 
+
+              <Button
+                type="submit"
+                variant="hero"
+                size="lg"
                 className="w-full md:w-auto px-12"
                 disabled={isSubmitting || !formData.description}
               >
@@ -245,6 +253,12 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* NEW: Contact Section */}
+      <div className="py-20">
+        <ContactSection />
+      </div>
+
 
       {/* Footer */}
       <footer className="px-6 py-16 border-t border-border/50">
@@ -258,7 +272,7 @@ const Index = () => {
                 Professional mathematical animations for research, education, and content creation.
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <h4 className="font-semibold text-foreground">Services</h4>
               <ul className="space-y-2 text-muted-foreground">
@@ -268,7 +282,7 @@ const Index = () => {
                 <li>Custom Visualizations</li>
               </ul>
             </div>
-            
+
             <div className="space-y-4">
               <h4 className="font-semibold text-foreground">Company</h4>
               <ul className="space-y-2 text-muted-foreground">
@@ -278,7 +292,7 @@ const Index = () => {
                 <li>Contact</li>
               </ul>
             </div>
-            
+
             <div className="space-y-4">
               <h4 className="font-semibold text-foreground">Legal</h4>
               <ul className="space-y-2 text-muted-foreground">
@@ -288,7 +302,7 @@ const Index = () => {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-border/50 mt-12 pt-8 text-center text-muted-foreground">
             <p>&copy; 2024 MathInMotion. All rights reserved.</p>
           </div>
