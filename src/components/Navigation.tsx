@@ -1,10 +1,19 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const Navigation = () => {
   const { user, loading, signOut } = useAuth();
+  const location = useLocation();
+
+  const handleHashNav = (e: React.MouseEvent, id: string) => {
+    if (location.pathname === '/') {
+      e.preventDefault();
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <header className="border-b border-border/50 bg-surface/80 backdrop-blur-sm sticky top-0 z-50">
@@ -20,16 +29,24 @@ const Navigation = () => {
           <Link to="/request" className="text-foreground hover:text-primary transition-colors">
             Submit Request
           </Link>
-          
-          {user && (
-            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
-              Dashboard
-            </Link>
-          )}
+          {/* New: smooth-scroll links */}
+          <Link
+            to="/#services"
+            className="text-foreground hover:text-primary transition-colors"
+            onClick={(e) => handleHashNav(e, 'services')}
+          >
+            Services & Capabilities
+          </Link>
+          <Link
+            to="/#contract-plans"
+            className="text-foreground hover:text-primary transition-colors"
+            onClick={(e) => handleHashNav(e, 'contract-plans')}
+          >
+            View Contract Plans
+          </Link>
         </nav>
 
         <div className="flex items-center space-x-4">
-          {/* Theme toggle always visible and appears to the left of auth button */}
           <ThemeToggle />
 
           {loading ? (
