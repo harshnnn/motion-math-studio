@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,8 +10,11 @@ import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { ServicesSection } from '@/components/sections/ServicesSection';
-import { ContactSection } from '@/components/sections/ContactSection';
+import { ServicesSection as EagerServicesSection } from '@/components/sections/ServicesSection';
+import { ContactSection as EagerContactSection } from '@/components/sections/ContactSection';
+import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
+import { Testimonials } from "@/components/sections/Testimonials";
+import { BudgetSelect } from "@/components/ui/BudgetSelect";
 
 const Index = () => {
   const { user } = useAuth();
@@ -23,34 +26,39 @@ const Index = () => {
     description: ''
   });
 
+  // SEO: set a more descriptive title
+  useEffect(() => {
+    const prev = document.title;
+    document.title = "Math Animation for Research & Education | MathInMotion";
+    return () => { document.title = prev; };
+  }, []);
+
+  // Optionally lazy-load heavy sections (fallback to existing eager if needed)
+  const ServicesSection = lazy(async () => ({ default: EagerServicesSection }));
+  const ContactSection = lazy(async () => ({ default: EagerContactSection }));
+
   const handleQuickSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       if (user) {
-        // If user is logged in, create a project
+        const [min, max] = (formData.budget || '')
+          .replace(/\$/g, '')
+          .split('-')
+          .map(v => parseInt(v.trim(), 10));
         const { error } = await supabase.from('projects').insert({
           user_id: user.id,
           title: 'Quick Request',
           description: formData.description,
           animation_type: 'formula_basic',
-          budget_min: parseInt(formData.budget.split('-')[0].replace('$', '')) || 50,
-          budget_max: parseInt(formData.budget.split('-')[1]?.replace('$', '')) || 200,
+          budget_min: Number.isFinite(min) ? min : 50,
+          budget_max: Number.isFinite(max) ? max : 200,
           status: 'submitted'
         });
-
         if (error) throw error;
-
-        toast({
-          title: "Request submitted!",
-          description: "We'll get back to you within 24 hours.",
-        });
-
-        // Reset form
+        toast({ title: "Request submitted!", description: "We'll get back to you within 24 hours." });
         setFormData({ email: '', budget: '', description: '' });
       } else {
-        // If not logged in, just save as a quick estimate
         await supabase.from('quick_estimates').insert({
           animation_type: 'formula_basic',
           duration_seconds: 15,
@@ -58,27 +66,19 @@ const Index = () => {
           estimated_price: 100,
           email: formData.email
         });
-
-        toast({
-          title: "Request received!",
-          description: "Please sign in to submit a full project request.",
-        });
+        toast({ title: "Request received!", description: "Please sign in to submit a full project request." });
       }
     } catch (error) {
       console.error('Error submitting request:', error);
-      toast({
-        title: "Error",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please try again later.", variant: "destructive" });
     }
-
     setIsSubmitting(false);
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+
       {/* Hero Section */}
       <section className="relative px-6 py-20 lg:py-32">
         <div className="max-w-7xl mx-auto">
@@ -88,10 +88,10 @@ const Index = () => {
               <div className="space-y-6">
                 <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                   <span className="bg-gradient-text bg-clip-text text-transparent">
-                    Bring Mathematical Ideas
+                    Math Animation for Research Papers
                   </span>
                   <br />
-                  <span className="text-foreground">to Motion</span>
+                  <span className="text-foreground">and Education</span>
                 </h1>
 
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
@@ -109,12 +109,11 @@ const Index = () => {
                 <Button variant="hero-outline" size="lg" className="text-lg px-8 py-4" asChild>
                   <Link to="/request">Submit Request</Link>
                 </Button>
+                {/* New: Scroll to contract plans */}
+                <Button variant="outline" size="lg" className="text-lg px-8 py-4" asChild>
+                  <a href="#contract-plans">View Contract Plans</a>
+                </Button>
               </div>
-
-              {/* Trust Badge */}
-              <p className="text-sm text-muted-foreground">
-                Trusted by researchers, educators & content creators
-              </p>
             </div>
 
             {/* Right Column - Demo Video */}
@@ -124,20 +123,15 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Background Mathematical Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 right-20 text-9xl text-primary/5 font-serif">∫</div>
-          <div className="absolute bottom-20 left-20 text-8xl text-secondary/5">∂</div>
-          <div className="absolute top-1/2 left-1/4 text-6xl text-accent/5">√</div>
-        </div>
+        {/* Remove the old in-hero contract block here */}
       </section>
 
-      {/* Features Section */}
+      {/* Features Section (SEO heading improved) */}
       <section className="px-6 py-20 bg-surface">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-foreground">
-              Mathematical Animation Services
+              Math Animation Services: Equations, Algorithms, Research Visuals
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               From simple formula visualizations to complex research animations,
@@ -188,11 +182,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* NEW: Services Section */}
-      <div className="py-20">
-        <ServicesSection />
-      </div>
+      {/* Why Choose Us */}
+      <WhyChooseUs />
 
+      {/* Services (lazy) */}
+      <div id="services" className="py-20 bg-surface">
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading services…</div>}>
+          <ServicesSection />
+        </Suspense>
+      </div>
 
       {/* Pricing Strip */}
       <section className="px-6 py-20">
@@ -201,8 +199,11 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Quick Request Section */}
-      <section className="px-6 py-20 bg-surface">
+      {/* Testimonials */}
+      <Testimonials />
+
+      {/* Quick Request Section (budget dropdown) */}
+      <section className="px-6 py-20 ">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6 text-foreground">
             Ready to Get Started?
@@ -223,11 +224,12 @@ const Index = () => {
                     required={!user}
                   />
                 )}
-                <Input
-                  type="text"
-                  placeholder="Budget range (e.g., $50-$200)"
+
+                {/* Budget dropdown replaces free text, but still fills formData.budget */}
+                <BudgetSelect
                   value={formData.budget}
-                  onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+                  onChange={(v) => setFormData(prev => ({ ...prev, budget: v }))
+                  }
                   className={!user ? "" : "md:col-span-2"}
                 />
               </div>
@@ -254,11 +256,74 @@ const Index = () => {
         </div>
       </section>
 
-      {/* NEW: Contact Section */}
-      <div className="py-20">
-        <ContactSection />
+      {/* Contact (lazy) */}
+      <div className="py-20 bg-surface">
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading contact…</div>}>
+          <ContactSection />
+        </Suspense>
       </div>
 
+      {/* New: Contract plans placed between Contact section and Footer */}
+      <section id="contract-plans" className="px-6 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+              Looking for a Long-Term Animation Partner?
+            </h3>
+            <p className="text-muted-foreground mt-2 max-w-3xl">
+              We offer ongoing monthly contracts for teams that need consistent, publication-ready math animations.
+              Perfect for research groups, universities, and agencies with recurring content.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Starter Plan */}
+            <div className="bg-card border border-border/50 rounded-2xl p-6 flex flex-col">
+              <div className="mb-3">
+                <h4 className="text-xl font-semibold text-foreground">Starter Plan</h4>
+                <p className="text-sm text-muted-foreground mt-1">5 animations per month</p>
+              </div>
+              <div className="text-3xl font-bold text-foreground">$500</div>
+              <p className="text-sm text-muted-foreground mt-2 flex-1">
+                Ideal for creators or small teams needing steady, polished equation animations.
+              </p>
+              <Button className="mt-6 w-full" asChild>
+                <Link to="/request">Hire Us</Link>
+              </Button>
+            </div>
+
+            {/* Research Partner */}
+            <div className="bg-card border border-border/50 rounded-2xl p-6 flex flex-col">
+              <div className="mb-3">
+                <h4 className="text-xl font-semibold text-foreground">Research Partner</h4>
+                <p className="text-sm text-muted-foreground mt-1">15 animations per month</p>
+              </div>
+              <div className="text-3xl font-bold text-foreground">$1500</div>
+              <p className="text-sm text-muted-foreground mt-2 flex-1">
+                Best for labs and departments producing frequent lecture or paper visuals.
+              </p>
+              <Button className="mt-6 w-full" asChild>
+                <Link to="/request">Hire Us</Link>
+              </Button>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-card border border-border/50 rounded-2xl p-6 flex flex-col">
+              <div className="mb-3">
+                <h4 className="text-xl font-semibold text-foreground">Enterprise</h4>
+                <p className="text-sm text-muted-foreground mt-1">Custom engagement</p>
+              </div>
+              <div className="text-3xl font-bold text-foreground">Custom</div>
+              <p className="text-sm text-muted-foreground mt-2 flex-1">
+                Tailored workflows, SLAs, and dedicated capacity for large teams and agencies.
+              </p>
+              <Button variant="outline" className="mt-6 w-full" asChild>
+                <Link to="/contact">Contact Us</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="px-6 py-16 border-t border-border/50">
