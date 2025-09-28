@@ -23,6 +23,11 @@ const Navigation = () => {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
+          {user && (
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+          )}
           <Link to="/estimate" className="text-foreground hover:text-primary transition-colors">
             Get Estimate
           </Link>
@@ -30,13 +35,6 @@ const Navigation = () => {
             Submit Request
           </Link>
           {/* New: smooth-scroll links */}
-          <Link
-            to="/#services"
-            className="text-foreground hover:text-primary transition-colors"
-            onClick={(e) => handleHashNav(e, 'services')}
-          >
-            Services & Capabilities
-          </Link>
           <Link
             to="/#contract-plans"
             className="text-foreground hover:text-primary transition-colors"
