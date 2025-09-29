@@ -29,7 +29,7 @@ const Index = () => {
   // SEO: set a more descriptive title
   useEffect(() => {
     const prev = document.title;
-    document.title = "Math Animation for Research & Education | MathInMotion";
+    document.title = "Math Animation for Research & Education | AlgoVisuals";
     return () => { document.title = prev; };
   }, []);
 
@@ -331,7 +331,7 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
               <h3 className="text-2xl font-bold bg-gradient-text bg-clip-text text-transparent">
-                MathInMotion
+                AlgoVisuals
               </h3>
               <p className="text-muted-foreground">
                 Professional mathematical animations for research, education, and content creation.
@@ -369,7 +369,7 @@ const Index = () => {
           </div>
 
           <div className="border-t border-border/50 mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 MathInMotion. All rights reserved.</p>
+            <p>&copy; 2024 AlgoVisuals. All rights reserved.</p>
           </div>
         </div>
       </footer>
