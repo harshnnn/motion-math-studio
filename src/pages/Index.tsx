@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import HeroDemo from "@/components/HeroDemo";
 import FeatureCard from "@/components/FeatureCard";
-import PricingStrip from "@/components/PricingStrip";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +15,9 @@ import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { BudgetSelect } from "@/components/ui/BudgetSelect";
 import Footer from "@/components/Footer";
+import { useRegionCurrency } from '@/hooks/useRegionCurrency';
+import { PRICING, getPrice } from '@/pricing/config';
+import { formatCurrency } from '@/utils/currency';
 
 const Index = () => {
   const { user } = useAuth();
@@ -26,6 +28,7 @@ const Index = () => {
     budget: '',
     description: ''
   });
+  const { currency, isIN } = useRegionCurrency('USD');
 
   // SEO: set a more descriptive title
   useEffect(() => {
@@ -145,10 +148,10 @@ const Index = () => {
               icon="π"
               title="Formula Animations"
               description="Clean, elegant animations of mathematical formulas and equations with smooth transitions and professional typography."
-              price="$15+"
+              price={`${formatCurrency(getPrice('formula', currency), currency)}+`}
               features={[
                 "5-20 second animations",
-                "1080p HD quality",
+                isIN ? "720p/1080p options" : "1080p HD quality",
                 "1 revision included",
                 "MP4 & WebM formats"
               ]}
@@ -158,7 +161,7 @@ const Index = () => {
               icon="∑"
               title="Math Objects & 3D"
               description="Interactive mathematical objects, geometric visualizations, and 3D mathematical concepts with dynamic movement."
-              price="$150+"
+              price={`${formatCurrency(getPrice('math3d', currency), currency)}+`}
               features={[
                 "Up to 60 seconds",
                 "3D mathematical objects",
@@ -171,7 +174,7 @@ const Index = () => {
               icon="∞"
               title="Full Research Animations"
               description="Complete research paper visualizations with custom storyboarding, multiple scenes, and publication-ready quality."
-              price="$800+"
+              price={`${formatCurrency(getPrice('research', currency), currency)}+`}
               features={[
                 "Custom duration",
                 "Complete storyboarding",
@@ -192,13 +195,6 @@ const Index = () => {
           <ServicesSection />
         </Suspense>
       </div>
-
-      {/* Pricing Strip */}
-      <section className="px-6 py-20">
-        <div className="max-w-4xl mx-auto">
-          <PricingStrip />
-        </div>
-      </section>
 
       {/* Testimonials */}
       <Testimonials />
@@ -284,7 +280,9 @@ const Index = () => {
                 <h4 className="text-xl font-semibold text-foreground">Starter Plan</h4>
                 <p className="text-sm text-muted-foreground mt-1">5 animations per month</p>
               </div>
-              <div className="text-3xl font-bold text-foreground">$500</div>
+              <div className="text-3xl font-bold text-foreground">
+                {formatCurrency(getPrice('starter', currency), currency) || (currency === 'INR' ? 'Custom' : 'Custom')}
+              </div>
               <p className="text-sm text-muted-foreground mt-2 flex-1">
                 Ideal for creators or small teams needing steady, polished equation animations.
               </p>
@@ -299,7 +297,9 @@ const Index = () => {
                 <h4 className="text-xl font-semibold text-foreground">Research Partner</h4>
                 <p className="text-sm text-muted-foreground mt-1">15 animations per month</p>
               </div>
-              <div className="text-3xl font-bold text-foreground">$1500</div>
+              <div className="text-3xl font-bold text-foreground">
+                {formatCurrency(PRICING.plans.research[currency], currency)}
+              </div>
               <p className="text-sm text-muted-foreground mt-2 flex-1">
                 Best for labs and departments producing frequent lecture or paper visuals.
               </p>
