@@ -23,6 +23,11 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
+import Terms from "./pages/policies/Terms";
+import Refunds from "./pages/policies/Refunds";
+import Shipping from "./pages/policies/Shipping";
+import Contact from "./pages/policies/Contact";
+import Privacy from "./pages/policies/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +63,13 @@ const App = () => (
                   <Route path="payments" element={<AdminPayments />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
+                
+                {/* Policy Routes */}
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/refunds" element={<Refunds />} />
+                <Route path="/shipping" element={<Shipping />} />
+                <Route path="/contact" element={<Contact />} />
                 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
