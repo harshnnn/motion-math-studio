@@ -19,7 +19,7 @@ const Navigation = () => {
     <header className="border-b border-border/50 bg-surface/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold bg-gradient-text bg-clip-text text-transparent">
-          MathInMotion
+          AlgoVisuals
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
