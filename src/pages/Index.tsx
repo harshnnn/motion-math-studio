@@ -15,6 +15,7 @@ import { ContactSection as EagerContactSection } from '@/components/sections/Con
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { BudgetSelect } from "@/components/ui/BudgetSelect";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ const Index = () => {
   // SEO: set a more descriptive title
   useEffect(() => {
     const prev = document.title;
-    document.title = "Math Animation for Research & Education | AlgoVisuals";
+    document.title = "Math Animation for Research & Education | MathInMotion";
     return () => { document.title = prev; };
   }, []);
 
@@ -325,54 +326,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-16 border-t border-border/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold bg-gradient-text bg-clip-text text-transparent">
-                AlgoVisuals
-              </h3>
-              <p className="text-muted-foreground">
-                Professional mathematical animations for research, education, and content creation.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">Services</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>Formula Animations</li>
-                <li>3D Math Objects</li>
-                <li>Research Videos</li>
-                <li>Custom Visualizations</li>
-              </ul>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">Company</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>About Us</li>
-                <li>Portfolio</li>
-                <li>Pricing</li>
-                <li>Contact</li>
-              </ul>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">Legal</h4>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>Terms of Service</li>
-                <li>Privacy Policy</li>
-                <li>License Terms</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border/50 mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 AlgoVisuals. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
