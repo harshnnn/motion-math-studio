@@ -42,15 +42,7 @@ const EstimatePage = () => {
           </Button>
         </div>
 
-        <section className="px-6 py-12">
-          <div className="mt-6 text-2xl font-bold text-foreground">
-            {formatCurrency(total, currency)}
-          </div>
-
-          <p className="text-sm text-muted-foreground mt-2">
-            Starts at {formatCurrency(getPrice('formula', currency), currency)}
-          </p>
-        </section>
+ 
       </div>
       </div>
     </div>
