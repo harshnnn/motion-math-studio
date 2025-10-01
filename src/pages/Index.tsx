@@ -44,19 +44,29 @@ const Index = () => {
   const handleQuickSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Parse budget safely for USD and INR strings like "₹5,000-₹10,000" or "$200-$500" or "₹75,000+"
+    const parseBudgetRange = (s: string) => {
+      const parts = s?.split('-') ?? [];
+      const nums = parts
+        .map(p => parseInt(p.replace(/[^\d]/g, ''), 10))
+        .filter(n => Number.isFinite(n));
+      if (nums.length >= 2) return { min: nums[0], max: nums[1] };
+      if (nums.length === 1) return { min: nums[0], max: nums[0] };
+      return currency === 'INR' ? { min: 1000, max: 5000 } : { min: 50, max: 200 };
+    };
+
     try {
+      const { min, max } = parseBudgetRange(formData.budget);
+
       if (user) {
-        const [min, max] = (formData.budget || '')
-          .replace(/\$/g, '')
-          .split('-')
-          .map(v => parseInt(v.trim(), 10));
         const { error } = await supabase.from('projects').insert({
           user_id: user.id,
           title: 'Quick Request',
           description: formData.description,
           animation_type: 'formula_basic',
-          budget_min: Number.isFinite(min) ? min : 50,
-          budget_max: Number.isFinite(max) ? max : 200,
+          budget_min: min,
+          budget_max: max,
           status: 'submitted'
         });
         if (error) throw error;
@@ -67,7 +77,8 @@ const Index = () => {
           animation_type: 'formula_basic',
           duration_seconds: 15,
           complexity_factor: 1.0,
-          estimated_price: 100,
+          // Use region price for a quick ballpark in the user’s currency
+          estimated_price: getPrice('formula', currency),
           email: formData.email
         });
         toast({ title: "Request received!", description: "Please sign in to submit a full project request." });
@@ -222,11 +233,11 @@ const Index = () => {
                   />
                 )}
 
-                {/* Budget dropdown replaces free text, but still fills formData.budget */}
+                {/* Budget dropdown now shows INR/USD based on region */}
                 <BudgetSelect
                   value={formData.budget}
-                  onChange={(v) => setFormData(prev => ({ ...prev, budget: v }))
-                  }
+                  onChange={(v) => setFormData(prev => ({ ...prev, budget: v }))}
+                  currency={currency}
                   className={!user ? "" : "md:col-span-2"}
                 />
               </div>
