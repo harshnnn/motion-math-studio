@@ -1,20 +1,42 @@
 import React from "react";
+import { formatCurrency } from "@/utils/currency";
 
 type Props = {
   value: string;
   onChange: (v: string) => void;
   className?: string;
+  // Optional: defaults to USD; pass "INR" to render INR ranges
+  currency?: "USD" | "INR";
 };
 
-const ranges = [
-  "$50-$200",
-  "$200-$500",
-  "$500-$1,000",
-  "$1,000-$3,000",
-  "$3,000+",
-];
+function rangesFor(currency: "USD" | "INR") {
+  // Define numeric tiers, we’ll format per currency
+  // Final “+” tier has null as max
+  return currency === "INR"
+    ? [
+        [499, 999],
+        [100, 1999],
+        [2000, 2999],
+        [3000, 3999],
+        [4000, null],
+      ]
+    : [
+        [50, 200],
+        [200, 500],
+        [500, 1000],
+        [1000, 3000],
+        [3000, null],
+      ];
+}
 
-export const BudgetSelect: React.FC<Props> = ({ value, onChange, className }) => {
+function fmt(min: number, max: number | null, currency: "USD" | "INR") {
+  if (max == null) return `${formatCurrency(min, currency)}+`;
+  return `${formatCurrency(min, currency)}-${formatCurrency(max, currency)}`;
+}
+
+export const BudgetSelect: React.FC<Props> = ({ value, onChange, className, currency = "USD" }) => {
+  const ranges = rangesFor(currency);
+
   return (
     <select
       value={value}
@@ -25,11 +47,16 @@ export const BudgetSelect: React.FC<Props> = ({ value, onChange, className }) =>
       <option value="" disabled>
         Select budget range
       </option>
-      {ranges.map((r) => (
-        <option key={r} value={r}>
-          {r}
-        </option>
-      ))}
+      {ranges.map(([min, max]) => {
+        const label = fmt(min as number, max as number | null, currency);
+        return (
+          <option key={label} value={label}>
+            {label}
+          </option>
+        );
+      })}
     </select>
   );
 };
+
+export default BudgetSelect;
