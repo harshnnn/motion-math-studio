@@ -2,8 +2,18 @@ import EstimateCalculator from '@/components/EstimateCalculator';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { formatCurrency } from '@/utils/currency';
+import { useRegionCurrency } from '@/hooks/useRegionCurrency';
+import { PRICING, getPrice } from '@/pricing/config';
 
 const EstimatePage = () => {
+  const { currency } = useRegionCurrency('USD');
+
+  // Replace any hardcoded USD amounts with region-aware values
+  const base = getPrice('formula', currency);
+
+  const total = /* ...your existing math but based on base... */ base;
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -31,6 +41,16 @@ const EstimatePage = () => {
             <Link to="/request">Submit Detailed Request</Link>
           </Button>
         </div>
+
+        <section className="px-6 py-12">
+          <div className="mt-6 text-2xl font-bold text-foreground">
+            {formatCurrency(total, currency)}
+          </div>
+
+          <p className="text-sm text-muted-foreground mt-2">
+            Starts at {formatCurrency(getPrice('formula', currency), currency)}
+          </p>
+        </section>
       </div>
       </div>
     </div>
