@@ -28,6 +28,7 @@ const AdminLayout = () => {
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/requests', label: 'Client Requests', icon: ClipboardList },
     { path: '/admin/projects', label: 'Projects', icon: FolderOpen },
+    { path: '/admin/testimonials', label: 'Testimonials', icon: ClipboardList },
     { path: '/admin/clients', label: 'Clients', icon: Users },
     { path: '/admin/support', label: 'Support Inbox', icon: MessageSquare },
     { path: '/admin/team', label: 'Team', icon: UserCheck },
