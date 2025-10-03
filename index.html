@@ -13,10 +13,41 @@
     <meta property="og:type" content="website" />
   <meta property="og:image" content="https://www.algovisuals.org/placeholder.svg" />
   <meta property="og:site_name" content="AlgoVisuals" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="https://www.algovisuals.org/placeholder.svg" />
-
+   <link rel="preconnect" href="https://bxqqqfjomjitvlvyvvvc.supabase.co" crossorigin>
+   <script type="application/ld+json">
+   {
+     "@context":"https://schema.org",
+     "@type":"Organization",
+     "name":"AlgoVisuals",
+     "url":"https://www.algovisuals.org",
+     "logo":"https://www.algovisuals.org/favicon.ico",
+     "sameAs":[]
+   }
+   </script>
+   <script type="application/ld+json">
+   {
+     "@context":"https://schema.org",
+     "@type":"WebSite",
+     "name":"AlgoVisuals",
+     "url":"https://www.algovisuals.org",
+     "potentialAction":{
+       "@type":"SearchAction",
+       "target":"https://www.algovisuals.org/?q={search_term_string}",
+       "query-input":"required name=search_term_string"
+     }
+   }
+   </script>
+   <script type="application/ld+json">
+   {
+     "@context":"https://schema.org",
+     "@type":"Service",
+     "name":"Math, Algorithm & Research Paper Animation",
+     "provider":{"@type":"Organization","name":"AlgoVisuals","url":"https://www.algovisuals.org"},
+     "areaServed":"Worldwide",
+     "serviceType":"Custom educational animation",
+     "description":"High quality animated explanations of algorithms, mathematics, physics equations and research papers."
+   }
+   </script>
     <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon" />
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="canonical" href="https://www.algovisuals.org/" />
@@ -24,25 +55,6 @@
 
   <body>
     <div id="root"></div>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "url": "https://www.algovisuals.org/",
-        "name": "AlgoVisuals",
-        "logo": "https://www.algovisuals.org/favicon.ico",
-        
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "url": "https://www.algovisuals.org/",
-        "name": "AlgoVisuals",
-        "alternateName": "AlgoVisuals"
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
