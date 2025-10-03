@@ -38,22 +38,24 @@ export default function ThankYou() {
   }, [type]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
-      <section className="px-6 py-20">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl font-bold text-foreground">{content.title}</h1>
-          <p className="text-muted-foreground mt-3">{content.desc}</p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Button asChild variant="hero">
-              <Link to={content.cta.to}>{content.cta.label}</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/contact">Contact Us</Link>
-            </Button>
+      <main className="flex-1">
+        <section className="px-6 py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl font-bold text-foreground">{content.title}</h1>
+            <p className="text-muted-foreground mt-3">{content.desc}</p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <Button asChild variant="hero">
+                <Link to={content.cta.to}>{content.cta.label}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/contact">Contact Us</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
       <Footer />
     </div>
   );
