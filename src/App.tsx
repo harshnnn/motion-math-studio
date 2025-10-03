@@ -29,6 +29,7 @@ import Refunds from "./pages/policies/Refunds";
 import Shipping from "./pages/policies/Shipping";
 import Contact from "./pages/policies/Contact";
 import Privacy from "./pages/policies/Privacy";
+import ContractRequestPage from "@/pages/ContractRequestPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/estimate" element={<EstimatePage />} />
                 <Route path="/request" element={<RequestPage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/contract" element={<ContractRequestPage />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
