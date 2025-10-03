@@ -22,6 +22,7 @@ import AdminTeam from "./pages/admin/AdminTeam";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminTestimonials from "./pages/admin/AdminTestimonials";
 import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import Terms from "./pages/policies/Terms";
 import Refunds from "./pages/policies/Refunds";
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="requests" element={<AdminRequests />} />
                   <Route path="projects" element={<AdminProjects />} />
+                  <Route path="testimonials" element={<AdminTestimonials />} />
                   <Route path="clients" element={<AdminClients />} />
                   <Route path="support" element={<AdminSupport />} />
                   <Route path="team" element={<AdminTeam />} />
