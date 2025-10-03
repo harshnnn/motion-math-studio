@@ -32,6 +32,7 @@ import Contact from "./pages/policies/Contact";
 import Privacy from "./pages/policies/Privacy";
 import ContractRequestPage from "@/pages/ContractRequestPage";
 import ThankYou from "@/pages/ThankYou";
+import AlgorithmAnimationPage from "@/pages/AlgorithmAnimation";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +53,8 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/contract" element={<ContractRequestPage />} />
                 <Route path="/thank-you" element={<ThankYou />} />
-                
+                <Route path="/algorithm-animation" element={<AlgorithmAnimationPage />} />
+
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin" element={
@@ -71,14 +73,14 @@ const App = () => (
                   <Route path="payments" element={<AdminPayments />} />
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
-                
+
                 {/* Policy Routes */}
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/refunds" element={<Refunds />} />
                 <Route path="/shipping" element={<Shipping />} />
                 <Route path="/contact" element={<Contact />} />
-                
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
