@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef, lazy, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +67,8 @@ interface Project {
   style_preferences?: string;
   deliverable_path?: string | null; // add
 }
+  // Lazy import review form to keep dashboard lean
+  const ClientReviewForm = lazy(() => import('@/components/reviews/ClientReviewForm'));
 
 interface QuickEstimate {
   id: string;
@@ -942,6 +944,27 @@ const EnhancedDashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Review Submission (visible when user has completed projects without a review) */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Share a Review</CardTitle>
+                    <CardDescription>Help others by sharing your experience. Reviews are published after admin approval.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const eligible = projects.find(p => p.status === 'completed');
+                      if (!eligible) {
+                        return <p className="text-sm text-muted-foreground">You can submit a review once a project is completed.</p>;
+                      }
+                      return (
+                        <Suspense fallback={<div className="text-sm text-muted-foreground">Loading form…</div>}>
+                          <ClientReviewForm projectId={eligible.id} defaultAuthor={user.email?.split('@')[0] || ''} />
+                        </Suspense>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </main>
