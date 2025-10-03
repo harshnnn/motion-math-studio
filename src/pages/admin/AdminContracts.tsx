@@ -17,9 +17,6 @@ function AdminLayoutInternal({ title, children }: AdminLayoutProps) {
 }
 
 export default function AdminContracts() {
-  return (
-    <AdminLayoutInternal title="Contracts">
-      <ContractsManager />
-    </AdminLayoutInternal>
-  );
+  // AdminLayout provides the frame via <Outlet />. This page should only render its content.
+  return <ContractsManager />;
 }
