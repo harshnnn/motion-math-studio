@@ -30,6 +30,7 @@ import Shipping from "./pages/policies/Shipping";
 import Contact from "./pages/policies/Contact";
 import Privacy from "./pages/policies/Privacy";
 import ContractRequestPage from "@/pages/ContractRequestPage";
+import ThankYou from "@/pages/ThankYou";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="/request" element={<RequestPage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/contract" element={<ContractRequestPage />} />
+                <Route path="/thank-you" element={<ThankYou />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
