@@ -15,7 +15,7 @@ function rangesFor(currency: "USD" | "INR") {
   return currency === "INR"
     ? [
         [499, 999],
-        [100, 1999],
+        [1000, 1999],
         [2000, 2999],
         [3000, 3999],
         [4000, null],
