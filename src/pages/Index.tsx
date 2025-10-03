@@ -30,7 +30,7 @@ const Index = () => {
   // SEO: set a more descriptive title
   useEffect(() => {
     const prev = document.title;
-    document.title = "Math Animation for Research & Education | MathInMotion";
+    document.title = "Math Animation for Research & Education | AlgoVisuals";
     return () => { document.title = prev; };
   }, []);
 
@@ -53,16 +53,16 @@ const Index = () => {
               <div className="space-y-6">
                 <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
                   <span className="bg-gradient-text bg-clip-text text-transparent">
-                    Math Animation for Research Papers
+                    Custom Animations for
                   </span>
                   <br />
-                  <span className="text-foreground">and Education</span>
+                  <span className="text-foreground">Innovators & Educators</span>
                 </h1>
 
                 <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
-                  Formula animations, research visuals & publication-grade videos
-                  made from your script. Transform complex mathematical concepts
-                  into elegant animated visualizations.
+                  High quality animated explanations for algorithms, math & physics equations,
+                  and full research papers. Turn complex concepts into publication‑grade
+                  motion that teaches & engages.
                 </p>
               </div>
 
@@ -88,7 +88,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Remove the old in-hero contract block here */}
       </section>
 
       {/* Features Section (SEO heading improved) */}
@@ -96,11 +95,14 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold mb-6 text-foreground">
-              Math Animation Services: Equations, Algorithms, Research Visuals
+              Scientific & Technical Animation Services: Equations, Algorithms, Research Visuals
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              From simple formula visualizations to complex research animations,
-              we bring your mathematical concepts to life with precision and elegance.
+              From simple formula visualizations to complex research & algorithm animations,
+              we bring mathematical ideas to life with precision and clarity. See our
+              <Link to="/algorithm-animation" className="ml-1 text-primary hover:underline">
+                Algorithm Animation Services
+              </Link>.
             </p>
           </div>
 
