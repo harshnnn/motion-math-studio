@@ -81,7 +81,6 @@ const EstimateCalculator = () => {
         duration_seconds: estimateData.duration,
         complexity_factor: estimateData.complexity,
         estimated_price: price,
-        currency, // store the currency used for this estimate
         email: email || null,
       });
       if (error) throw error;
