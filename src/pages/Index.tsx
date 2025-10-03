@@ -197,7 +197,7 @@ const Index = () => {
                 Ideal for creators or small teams needing steady, polished equation animations.
               </p>
               <Button className="mt-6 w-full" asChild>
-                <Link to="/request">Hire Us</Link>
+                <Link to="/contract?plan=starter">Start Contract Request</Link>
               </Button>
             </div>
 
@@ -214,7 +214,7 @@ const Index = () => {
                 Best for labs and departments producing frequent lecture or paper visuals.
               </p>
               <Button className="mt-6 w-full" asChild>
-                <Link to="/request">Hire Us</Link>
+                <Link to="/contract?plan=research">Start Contract Request</Link>
               </Button>
             </div>
 
@@ -229,7 +229,7 @@ const Index = () => {
                 Tailored workflows, SLAs, and dedicated capacity for large teams and agencies.
               </p>
               <Button variant="outline" className="mt-6 w-full" asChild>
-                <Link to="/contact">Contact Us</Link>
+                <Link to="/contract?plan=enterprise">Start Contract Request</Link>
               </Button>
             </div>
           </div>
