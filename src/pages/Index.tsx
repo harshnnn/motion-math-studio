@@ -1,28 +1,30 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// Removed unused imports to prevent unnecessary bundle and re-renders
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import HeroDemo from "@/components/HeroDemo";
 import FeatureCard from "@/components/FeatureCard";
 import Navigation from "@/components/Navigation";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+// import { supabase } from "@/integrations/supabase/client";
+// import { useAuth } from "@/hooks/useAuth";
+// import { useToast } from "@/hooks/use-toast";
 import { ServicesSection as EagerServicesSection } from '@/components/sections/ServicesSection';
 import { ContactSection as EagerContactSection } from '@/components/sections/ContactSection';
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
-import { Testimonials } from "@/components/sections/Testimonials";
+// import { Testimonials } from "@/components/sections/Testimonials";
 import { BudgetSelect } from "@/components/ui/BudgetSelect";
 import Footer from "@/components/Footer";
 import { useRegionCurrency } from '@/hooks/useRegionCurrency';
 import { PRICING, getPrice } from '@/pricing/config';
 import { formatCurrency } from '@/utils/currency';
 import QuickRequestSection from "@/components/sections/QuickRequestSection";
+import TestimonialsFeed from "@/components/sections/TestimonialsFeed";
 
 const Index = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  // const { user } = useAuth();
+  // const { toast } = useToast();
   const { currency, isIN } = useRegionCurrency('USD');
 
   // SEO: set a more descriptive title
@@ -156,8 +158,8 @@ const Index = () => {
       </div>
 
       {/* Testimonials */}
-      <Testimonials />
-
+      {/* <Testimonials /> */}
+      <TestimonialsFeed />
       {/* Quick Request Section (memoized & isolated to prevent page rerenders) */}
       <QuickRequestSection />
 
