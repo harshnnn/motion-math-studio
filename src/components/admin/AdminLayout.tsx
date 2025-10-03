@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Bell,
-  MessageSquare
+  MessageSquare,
+  Handshake
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ const AdminLayout = () => {
     { path: '/admin/requests', label: 'Client Requests', icon: ClipboardList },
     { path: '/admin/projects', label: 'Projects', icon: FolderOpen },
     { path: '/admin/testimonials', label: 'Testimonials', icon: ClipboardList },
+    { path: '/admin/contracts', label: 'Contracts', icon: Handshake },
     { path: '/admin/clients', label: 'Clients', icon: Users },
     { path: '/admin/support', label: 'Support Inbox', icon: MessageSquare },
     { path: '/admin/team', label: 'Team', icon: UserCheck },
@@ -68,7 +70,6 @@ const AdminLayout = () => {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
               return (
                 <Button
                   key={item.path}
@@ -84,8 +85,6 @@ const AdminLayout = () => {
                 </Button>
               );
             })}
-            <Link className="block px-3 py-2 rounded hover:bg-muted" to="/admin/testimonials">Testimonials</Link>
-            <Link className="block px-3 py-2 rounded hover:bg-muted" to="/admin/contracts">Contracts</Link>
           </nav>
 
           {/* Footer */}
