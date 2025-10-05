@@ -60,7 +60,7 @@ const Contact = () => (
     <main className="pt-28 pb-16">
       <div className="mx-auto w-full max-w-6xl px-6">
         <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-muted/30 px-8 py-12 shadow-sm">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,theme(colors.primary/25),transparent_60%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)_/_0.25),transparent_60%)]" />
           <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center">
             <div className="space-y-6">
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/90">Let's collaborate</p>
@@ -198,7 +198,7 @@ const Contact = () => (
               </p>
             </div>
             <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-muted/20 p-6">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,theme(colors.primary/15),transparent_70%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)_/_0.15),transparent_70%)]" />
               <div className="relative flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-sm text-foreground">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
