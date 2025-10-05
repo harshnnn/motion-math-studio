@@ -8,7 +8,7 @@ import {
   HandPlatter,
   Lightbulb,
   Mail,
-  PhoneCall,
+  MessageSquareDot,
   ShieldAlert,
   Timer,
 } from "lucide-react";
@@ -64,8 +64,8 @@ const refundSections = [
     summary:
       "Our finance desk partners with Razorpay to ensure funds route back to the original payment source quickly.",
     bullets: [
-      "Acknowledgement email confirming your ticket ID within one business day.",
-      "Finance review and approval within three business days—expect clarifying questions if data is missing.",
+      "Acknowledgement email and in-app support confirmation within one business day.",
+      "Finance review and approval within three business days—expect clarifying questions if data is missing, shared via the same support thread.",
       "Razorpay initiates the refund to your payment method; timelines vary by bank or card issuer.",
       "A final settlement statement is shared for your records once the transaction is complete.",
     ],
@@ -104,10 +104,10 @@ const contactChannels = [
     description: "Best for formal cancellation requests or refund-status enquiries.",
   },
   {
-    icon: PhoneCall,
-    label: "Priority Line",
-    value: "+91-8252582431",
-    description: "Call when you need immediate assistance with time-sensitive deliverables.",
+    icon: MessageSquareDot,
+    label: "In-app Support",
+    value: "Client workspace",
+    description: "Track refund tickets and respond to finance queries inside the post-login support hub.",
   },
   {
     icon: HandPlatter,

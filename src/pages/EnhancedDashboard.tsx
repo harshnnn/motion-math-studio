@@ -473,7 +473,9 @@ const EnhancedDashboard = () => {
           <SidebarContent>
             <div className="p-4 border-b border-border/50">
               <h1 className="text-lg font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">AlgoVisuals</span>
+                <Link to="/" className="inline-flex items-center gap-1 text-transparent bg-gradient-to-r from-primary to-purple-400 bg-clip-text transition hover:opacity-80">
+                  AlgoVisuals
+                </Link>
               </h1>
             </div>
             <SidebarGroup>

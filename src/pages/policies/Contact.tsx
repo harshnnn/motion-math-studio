@@ -6,9 +6,7 @@ import {
   Clock3,
   Headset,
   Mail,
-  MapPin,
   MessageSquareDot,
-  PhoneCall,
   Sparkles,
 } from "lucide-react";
 
@@ -21,18 +19,15 @@ const contactChannels = [
     notes: ["Best for: new engagements, pricing questions, partnership ideas.", "Attachments welcome – decks, specs, or wireframes."],
   },
   {
-    icon: PhoneCall,
-    title: "Direct Line",
-    description: "Speak with our solutions team for rapid coordination across ongoing initiatives.",
-    primary: "+91-8252582431",
-    notes: ["Available Monday to Friday", "Ideal for time-sensitive updates or clarifications."],
-  },
-  {
     icon: MessageSquareDot,
     title: "Support Desk",
-    description: "Log technical issues, request revisions, or escalate blockers across engineering deliverables.",
-    primary: "Algovisuals100@gmail.com",
-    notes: ["Guaranteed first response under 24 hours.", "Tracked via ticketing to ensure full resolution."],
+    description: "Log technical issues, request revisions, or escalate blockers across engineering deliverables inside the in-app support hub.",
+    primary: "In-app Support",
+    notes: [
+      "Guaranteed first response under 24 hours via the post-login support workspace.",
+      "Email channel available for archival or if you need to share large attachments.",
+      "Tracked via ticketing to ensure full resolution.",
+    ],
   },
 ];
 
@@ -51,6 +46,25 @@ const serviceCommitments = [
     icon: Clock3,
     title: "Clear response windows",
     description: "Office hours run Mon–Fri · 10:00–18:00 IST, with emergency coverage for critical production issues.",
+  },
+];
+
+const remoteSupportHighlights = [
+  {
+    title: "Virtual workrooms",
+    description: "Book video calls or async Loom walkthroughs—no timezone headaches, just focused collaboration.",
+  },
+  {
+    title: "In-app support threads",
+    description: "Raise tickets, review responses, and approve fixes inside the secure dashboard after you sign in.",
+  },
+  {
+    title: "Centralized updates",
+    description: "Track milestones inside shared dashboards and receive structured email summaries at every stage.",
+  },
+  {
+    title: "Secure handoffs",
+    description: "Deliverables ship via encrypted storage links with optional password protection and expiry windows.",
   },
 ];
 
@@ -191,48 +205,26 @@ const Contact = () => (
 
           <div className="space-y-6 rounded-3xl border border-border/60 bg-card/70 p-8 shadow-sm">
             <div className="space-y-3">
-              <h2 className="text-xl font-semibold">Visit our studio</h2>
+              <h2 className="text-xl font-semibold">Digital-first collaboration</h2>
               <p className="text-sm text-muted-foreground">
-                AlgoVisuals, New Ramnagar, Arrah, Bihar · 802301 · India. Meetings by appointment only—reach out to secure a
-                slot.
+                We operate as a fully remote studio. Strategy, reviews, and deliveries happen online through secure, recorded touchpoints.
               </p>
             </div>
             <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-muted/20 p-6">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)_/_0.15),transparent_70%)]" />
-              <div className="relative flex flex-col gap-4">
-                <div className="flex items-center gap-3 text-sm text-foreground">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <MapPin className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">Arrah Design Lab</p>
-                    <p className="text-xs text-muted-foreground">Ground floor · New Ramnagar, Bihar</p>
+              <div className="relative space-y-4 text-sm text-muted-foreground">
+                {remoteSupportHighlights.map(({ title, description }) => (
+                  <div key={title} className="space-y-1 rounded-2xl border border-border/40 bg-background/90 p-4">
+                    <p className="text-sm font-semibold text-foreground">{title}</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
                   </div>
+                ))}
+                <div className="rounded-2xl border border-border/40 bg-background/95 p-4 text-xs text-muted-foreground">
+                  <p className="font-semibold text-foreground">Need a live session?</p>
+                  <p className="mt-2">
+                    Video stand-ups and async updates are included in every engagement. Share your preferred platform—Zoom, Meet, Teams, or Loom—and we’ll schedule it.
+                  </p>
                 </div>
-                <div className="rounded-2xl border border-border/40 bg-background/90 p-4 text-xs text-muted-foreground">
-                  <p className="font-semibold text-foreground">Visiting checklist</p>
-                  <ul className="mt-2 space-y-2">
-                    <li className="flex gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />Bring an official ID for guest access.
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />Notify us of hardware demos so we can
-                      prep the lab.
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />Parking assistance available on
-                      request.
-                    </li>
-                  </ul>
-                </div>
-                <a
-                  href="https://maps.google.com?q=AlgoVisuals,+New+Ramnagar,+Arrah,+Bihar"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 text-xs font-semibold text-primary transition hover:border-primary hover:bg-primary/20"
-                >
-                  Open in Maps
-                </a>
               </div>
             </div>
           </div>

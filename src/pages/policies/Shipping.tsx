@@ -6,10 +6,9 @@ import {
   CloudDownload,
   Clock3,
   Globe2,
-  Layers,
   Mail,
   MapPinned,
-  PhoneCall,
+  MessageSquareDot,
   ServerCog,
   Truck,
 } from "lucide-react";
@@ -92,7 +91,7 @@ const shippingSections = [
       "Implementation support available for 14 days after each milestone delivery.",
       "Bug fixes on delivered scope are prioritized within one business day.",
       "Enhancement requests flow into the next sprint or support retainer.",
-      "Dedicated success managers coordinate go-live schedules and feedback loops.",
+      "Dedicated success managers coordinate go-live schedules and feedback loops through the in-app support workspace.",
     ],
   },
 ];
@@ -105,10 +104,10 @@ const contactChannels = [
     description: "Request shipment links, timeline updates, or deployment access.",
   },
   {
-    icon: PhoneCall,
-    label: "Logistics Hotline",
-    value: "+91-8252582431",
-    description: "Ideal for urgent release coordination or high-priority escalations.",
+    icon: MessageSquareDot,
+    label: "In-app Support",
+    value: "Client workspace",
+    description: "Chat with delivery leads inside your account for real-time release coordination post-login.",
   },
   {
     icon: MapPinned,

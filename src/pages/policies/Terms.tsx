@@ -6,8 +6,6 @@ import {
   FileSignature,
   Gavel,
   Handshake,
-  Layers3,
-  ReceiptText,
   ShieldCheck,
   TimerReset,
 } from "lucide-react";
@@ -54,6 +52,7 @@ const termsSections = [
       "Kick-off occurs within five business days of signature unless otherwise agreed.",
       "Review cycles include structured feedback windows; delays may shift downstream milestones proportionally.",
       "We provide workspace access for progress demos, issue tracking, and asset hand-offs.",
+      "Day-to-day questions are routed through the in-app support workspace available once you log in.",
       "Both parties assign a primary contact responsible for fast decision making.",
     ],
   },
@@ -137,7 +136,7 @@ const termsSections = [
     bullets: [
       "These terms are governed by the laws of the Republic of India.",
   "We’ll first attempt to resolve disputes through good-faith negotiation within 30 days.",
-      "If unresolved, disputes are subject to the exclusive jurisdiction of the courts in Bihar.",
+  "If unresolved, disputes are subject to the exclusive jurisdiction of the competent courts in India.",
       "All notices and legal correspondence must be sent to contact@algovisuals.org with the subject ‘Legal Notice’.",
     ],
   },

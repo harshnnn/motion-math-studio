@@ -1,6 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { BadgeCheck, Database, Globe2, LockKeyhole, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { BadgeCheck, Database, Globe2, LockKeyhole, Mail, MessageSquareDot, ShieldCheck, UserCheck } from "lucide-react";
 
 const lastUpdated = "October 1, 2025";
 
@@ -103,6 +103,12 @@ const contactChannels = [
     label: "Direct Email",
     value: "contact@algovisuals.org",
     description: "Ideal for privacy requests, data export, or deletion enquiries.",
+  },
+  {
+    icon: MessageSquareDot,
+    label: "In-app Support",
+    value: "Client workspace",
+    description: "Secure chat with our privacy specialists once you sign in to the support portal.",
   },
   {
     icon: UserCheck,
