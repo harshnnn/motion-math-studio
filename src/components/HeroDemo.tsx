@@ -7,128 +7,228 @@ export default function HeroDemo() {
             viewBox="0 0 960 540"
             role="img"
             aria-labelledby="hero-visual-title hero-visual-desc"
-            className="w-full h-full"
+            className="h-full w-full"
           >
-            <title id="hero-visual-title">AlgoVisuals creative technology showcase</title>
+            <title id="hero-visual-title">AlgoVisuals seamless motion showcase</title>
             <desc id="hero-visual-desc">
-              Animated visualization representing algorithmic pathfinding, mathematical surfaces, and physics simulations.
+              An endless loop depicting algorithmic flow, mathematical surfaces, and orbital systems with cinematic transitions.
             </desc>
+
             <defs>
-              <radialGradient id="heroGlow" cx="50%" cy="45%" r="65%">
-                <stop offset="0%" stopColor="hsl(200 100% 72%)" stopOpacity="0.35" />
-                <stop offset="45%" stopColor="hsl(264 83% 70%)" stopOpacity="0.18" />
-                <stop offset="100%" stopColor="hsl(240 12% 10%)" stopOpacity="0.12" />
+              <radialGradient id="bgGlow" cx="52%" cy="48%" r="68%">
+                <stop offset="0%" stopColor="hsl(200 95% 72% / 0.38)" />
+                <stop offset="45%" stopColor="hsl(266 92% 70% / 0.22)" />
+                <stop offset="100%" stopColor="hsl(240 18% 10% / 0.18)" />
               </radialGradient>
-              <linearGradient id="heroGrid" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="hsl(200 100% 65%)" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="hsl(264 83% 70%)" stopOpacity="0.15" />
+              <radialGradient id="pulse" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="hsl(200 100% 70% / 0.35)" />
+                <stop offset="100%" stopColor="hsl(200 100% 70% / 0)" />
+              </radialGradient>
+              <linearGradient id="gridSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="hsl(200 100% 72% / 0.35)" />
+                <stop offset="100%" stopColor="hsl(264 95% 72% / 0.15)" />
               </linearGradient>
-              <filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+              <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="7" result="blur" />
                 <feMerge>
-                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <path
+                id="flowPath"
+                d="M120 400 C200 360 260 290 340 270 C460 240 540 320 620 300 C720 276 780 220 840 200"
+              />
+              <clipPath id="frameMask">
+                <rect x="32" y="32" width="896" height="476" rx="28" />
+              </clipPath>
             </defs>
 
-            <rect width="960" height="540" fill="hsl(240 12% 8%)" />
-            <rect width="960" height="540" fill="url(#heroGlow)" />
+            <rect width="960" height="540" fill="hsl(237 18% 10%)" />
+            <rect width="960" height="540" fill="url(#bgGlow)">
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0 480 270"
+                to="360 480 270"
+                dur="18s"
+                repeatCount="indefinite"
+              />
+            </rect>
 
-            {/* Grid */}
-            <g stroke="url(#heroGrid)" strokeWidth="0.8" opacity="0.45">
-              {Array.from({ length: 16 }).map((_, i) => (
-                <line key={`v-${i}`} x1={120 + i * 48} y1="60" x2={360 + i * 36} y2="520" />
-              ))}
-              {Array.from({ length: 12 }).map((_, i) => (
-                <line key={`h-${i}`} x1="60" y1={120 + i * 34} x2="900" y2={220 + i * 28} />
-              ))}
-            </g>
+            <g clipPath="url(#frameMask)">
+              {/* Emanating pulse */}
+              <circle cx="480" cy="270" r="160" fill="url(#pulse)">
+                <animate
+                  attributeName="r"
+                  dur="9s"
+                  values="120;180;120"
+                  repeatCount="indefinite"
+                  keyTimes="0;0.5;1"
+                  keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                />
+                <animate
+                  attributeName="opacity"
+                  dur="9s"
+                  values="0.28;0.45;0.28"
+                  repeatCount="indefinite"
+                  keyTimes="0;0.5;1"
+                  keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                />
+              </circle>
 
-            {/* Algorithm Path */}
-            <g>
-              <path
-                d="M180 420 Q260 360 320 320 T460 260 T620 200 T760 160"
+              {/* Tilted grid */}
+              <g transform="translate(0 40)">
+                <g stroke="url(#gridSheen)" strokeWidth="0.8" opacity="0.45">
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <line
+                      key={`gv-${i}`}
+                      x1={50 + i * 46}
+                      y1={80}
+                      x2={300 + i * 34}
+                      y2={520}
+                    />
+                  ))}
+                  {Array.from({ length: 16 }).map((_, i) => (
+                    <line key={`gh-${i}`} x1={40} y1={90 + i * 28} x2={900} y2={210 + i * 24} />
+                  ))}
+                </g>
+                <rect width="960" height="480" fill="hsl(237 18% 12% / 0.6)" />
+              </g>
+
+              {/* Flow line */}
+              <use href="#flowPath" fill="none" stroke="hsl(200 100% 72% / 0.16)" strokeWidth="14" />
+              <use
+                href="#flowPath"
                 fill="none"
-                stroke="hsl(200 100% 70%)"
+                stroke="hsl(200 100% 72%)"
                 strokeWidth="6"
                 strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray="24 16"
-                opacity="0.85"
+                strokeDasharray="20 16"
+                opacity="0.9"
               >
-                <animate attributeName="stroke-dashoffset" values="0;-160" dur="6s" repeatCount="indefinite" />
-              </path>
-              <circle r="24" fill="hsl(264 83% 70%)" filter="url(#nodeGlow)">
-                <animateMotion
-                  dur="6s"
-                  repeatCount="indefinite"
-                  path="M180 420 Q260 360 320 320 T460 260 T620 200 T760 160"
-                  keyTimes="0;1"
-                />
-              </circle>
-            </g>
+                <animate attributeName="stroke-dashoffset" dur="8s" values="0;-288" repeatCount="indefinite" />
+              </use>
 
-            {/* Mathematical Surface */}
-            <g transform="translate(120 140)">
-              <path
-                d="M0 180 Q120 60 240 120 T480 80"
-                fill="none"
-                stroke="hsl(240 30% 45%)"
-                strokeOpacity="0.6"
-                strokeWidth="7"
-              />
-              <path
-                d="M0 180 Q120 60 240 120 T480 80"
-                fill="none"
-                stroke="hsl(200 100% 70%)"
-                strokeWidth="7"
-                strokeOpacity="0.8"
-                strokeLinecap="round"
-              >
-                <animate
-                  attributeName="d"
-                  dur="7s"
-                  repeatCount="indefinite"
-                  values="M0 180 Q120 60 240 120 T480 80;M0 200 Q120 40 240 140 T480 60;M0 180 Q120 60 240 120 T480 80"
-                />
-              </path>
-              <circle cx="240" cy="120" r="14" fill="hsl(45 100% 70%)">
-                <animate attributeName="cy" values="120;100;140;120" dur="3.2s" repeatCount="indefinite" />
-              </circle>
-              <circle cx="360" cy="100" r="10" fill="hsl(200 100% 70%)">
-                <animate attributeName="cy" values="100;80;110;100" dur="2.4s" repeatCount="indefinite" />
-              </circle>
-            </g>
+              {/* Beacon nodes */}
+              {[
+                { offset: 0.18, color: "hsl(196 100% 78%)" },
+                { offset: 0.46, color: "hsl(261 95% 75%)" },
+                { offset: 0.74, color: "hsl(45 100% 72%)" },
+              ].map(({ offset, color }) => (
+                <circle key={offset} r="18" fill={color} filter="url(#softGlow)">
+                  <animateMotion
+                    dur="8s"
+                    repeatCount="indefinite"
+                    rotate="auto"
+                    keyPoints="0;1"
+                    keyTimes="0;1"
+                    begin={`-${offset * 8}s`}
+                    path="M120 400 C200 360 260 290 340 270 C460 240 540 320 620 300 C720 276 780 220 840 200"
+                  />
+                </circle>
+              ))}
 
-            {/* Physics Orbitals */}
-            <g transform="translate(640 280)">
-              <circle cx="0" cy="0" r="90" fill="none" stroke="hsl(264 83% 70% / 0.25)" strokeWidth="1.5" />
-              <circle cx="0" cy="0" r="140" fill="none" stroke="hsl(200 100% 70% / 0.2)" strokeWidth="1.5" />
-              {['6s', '9s', '12s'].map((dur, idx) => (
-                <circle key={dur} r={8 + idx * 4} fill="hsl(200 100% 70%)">
+              {/* Surface waves */}
+              <g transform="translate(90 140)">
+                <path
+                  d="M0 200 C120 120 240 150 360 130 C480 110 600 160 720 120"
+                  fill="none"
+                  stroke="hsl(240 30% 46% / 0.55)"
+                  strokeWidth="8"
+                />
+                <path
+                  d="M0 200 C120 120 240 150 360 130 C480 110 600 160 720 120"
+                  fill="none"
+                  stroke="hsl(200 100% 72% / 0.82)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                >
+                  <animate
+                    attributeName="d"
+                    dur="10s"
+                    repeatCount="indefinite"
+                    values="M0 200 C120 120 240 150 360 130 C480 110 600 160 720 120;M0 210 C120 100 240 160 360 110 C480 130 600 150 720 130;M0 200 C120 120 240 150 360 130 C480 110 600 160 720 120"
+                    keyTimes="0;0.5;1"
+                    keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                  />
+                </path>
+              </g>
+
+              {/* Orbital system */}
+              <g transform="translate(660 280)">
+                <circle r="100" fill="none" stroke="hsl(264 92% 72% / 0.3)" strokeWidth="1.5" />
+                <circle r="160" fill="none" stroke="hsl(200 100% 72% / 0.24)" strokeWidth="1.5" />
+                <circle r="28" fill="hsl(215 100% 78% / 0.9)" filter="url(#softGlow)">
                   <animateTransform
                     attributeName="transform"
                     type="rotate"
-                    from="0 0 0"
-                    to="360 0 0"
-                    dur={dur}
+                    dur="14s"
+                    values="0 0 0;360 0 0"
                     repeatCount="indefinite"
+                    keyTimes="0;1"
                   />
-                  <animate attributeName="r" values={`${8 + idx * 4};${10 + idx * 4};${8 + idx * 4}`} dur={dur} repeatCount="indefinite" />
                 </circle>
-              ))}
-            </g>
+                {[{ r: 8, d: 9 }, { r: 11, d: 13 }, { r: 14, d: 17 }].map(({ r, d }, idx) => (
+                  <circle key={idx} cx="0" cy={100 + idx * 20} r={r} fill="hsl(200 100% 70%)">
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      dur={`${d}s`}
+                      values="0 0 0;360 0 0"
+                      repeatCount="indefinite"
+                      keyTimes="0;1"
+                    />
+                    <animate
+                      attributeName="r"
+                      dur={`${d}s`}
+                      values={`${r};${r + 3};${r}`}
+                      repeatCount="indefinite"
+                      keyTimes="0;0.5;1"
+                      keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                    />
+                  </circle>
+                ))}
+              </g>
 
-            {/* Caption */}
-            <g transform="translate(72 72)">
-              <rect width="380" height="96" rx="18" fill="hsl(240 10% 12% / 0.92)" stroke="hsl(264 83% 60% / 0.35)" />
-              <text x="28" y="46" fill="hsl(200 100% 80%)" fontSize="30" fontWeight="600" letterSpacing="0.12em">
-                ALGOVISUALS
-              </text>
-              <text x="28" y="76" fill="hsl(240 12% 70%)" fontSize="18" letterSpacing="0.28em">
-                MOTION  DESIGN  +  SCIENCE
-              </text>
+              {/* Floating math glyphs */}
+              {[
+                { x: 160, y: 430, char: "∑" },
+                { x: 780, y: 140, char: "π" },
+                { x: 520, y: 380, char: "∞" },
+              ].map(({ x, y, char }, idx) => (
+                <text
+                  key={char}
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  fontSize="58"
+                  fill="hsl(200 100% 72% / 0.16)"
+                >
+                  {char}
+                  <animateTransform
+                    attributeName="transform"
+                    type="translate"
+                    dur="12s"
+                    values="0 0;0 -14;0 0"
+                    repeatCount="indefinite"
+                    keyTimes="0;0.5;1"
+                    begin={`${idx * 1.8}s`}
+                    keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+                  />
+                </text>
+              ))}
+
+              {/* Caption tile */}
+              <g transform="translate(72 72)">
+                <rect width="400" height="104" rx="22" fill="hsl(240 10% 12% / 0.9)" stroke="hsl(266 92% 72% / 0.35)" />
+                <text x="32" y="50" fill="hsl(200 100% 82%)" fontSize="30" fontWeight="600" letterSpacing="0.14em">
+                  ALGOVISUALS
+                </text>
+                <text x="32" y="80" fill="hsl(240 12% 72%)" fontSize="18" letterSpacing="0.32em">
+                  MOTION  DESIGN  ×  SCIENCE
+                </text>
+              </g>
             </g>
           </svg>
         </div>
