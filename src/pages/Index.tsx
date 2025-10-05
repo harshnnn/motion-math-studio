@@ -1,30 +1,18 @@
-import { useState, useEffect, lazy, Suspense } from "react";
-import { Button } from "@/components/ui/button";
-// Removed unused imports to prevent unnecessary bundle and re-renders
-// import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
+import { useCallback, useEffect } from "react";
+import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom";
 import HeroDemo from "@/components/HeroDemo";
 import FeatureCard from "@/components/FeatureCard";
 import Navigation from "@/components/Navigation";
-// import { supabase } from "@/integrations/supabase/client";
-// import { useAuth } from "@/hooks/useAuth";
-// import { useToast } from "@/hooks/use-toast";
-import { ServicesSection as EagerServicesSection } from '@/components/sections/ServicesSection';
-import { ContactSection as EagerContactSection } from '@/components/sections/ContactSection';
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
-// import { Testimonials } from "@/components/sections/Testimonials";
-import { BudgetSelect } from "@/components/ui/BudgetSelect";
 import Footer from "@/components/Footer";
 import { useRegionCurrency } from '@/hooks/useRegionCurrency';
 import { PRICING, getPrice } from '@/pricing/config';
 import { formatCurrency } from '@/utils/currency';
-import QuickRequestSection from "@/components/sections/QuickRequestSection";
-import TestimonialsFeed from "@/components/sections/TestimonialsFeed";
+import { LazySection } from "@/components/sections/LazySection";
 
 const Index = () => {
-  // const { user } = useAuth();
-  // const { toast } = useToast();
+
   const { currency, isIN } = useRegionCurrency('USD');
 
   // SEO: set a more descriptive title
@@ -34,9 +22,25 @@ const Index = () => {
     return () => { document.title = prev; };
   }, []);
 
-  // Optionally lazy-load heavy sections (fallback to existing eager if needed)
-  const ServicesSection = lazy(async () => ({ default: EagerServicesSection }));
-  const ContactSection = lazy(async () => ({ default: EagerContactSection }));
+  const loadServicesSection = useCallback(
+    () => import("@/components/sections/ServicesSection").then((module) => ({ default: module.ServicesSection })),
+    []
+  );
+
+  const loadContactSection = useCallback(
+    () => import("@/components/sections/ContactSection").then((module) => ({ default: module.ContactSection })),
+    []
+  );
+
+  const loadTestimonialsFeed = useCallback(
+    () => import("@/components/sections/TestimonialsFeed"),
+    []
+  );
+
+  const loadQuickRequestSection = useCallback(
+    () => import("@/components/sections/QuickRequestSection"),
+    []
+  );
 
   // Removed local Quick Request state and handlers to avoid rerendering the entire page on keystrokes.
 
@@ -153,24 +157,38 @@ const Index = () => {
       <WhyChooseUs />
 
       {/* Services (lazy) */}
-      <div id="services" className="py-20 bg-surface">
-        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading services…</div>}>
-          <ServicesSection />
-        </Suspense>
+      <div id="services">
+        <LazySection
+          loader={loadServicesSection}
+          className="py-20 bg-surface"
+          fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading services…</div>}
+        />
       </div>
 
       {/* Testimonials */}
       {/* <Testimonials /> */}
-      <TestimonialsFeed />
+      <LazySection
+        loader={loadTestimonialsFeed}
+        className="px-6 py-20 bg-surface"
+        fallback={
+          <div className="max-w-4xl mx-auto text-center text-muted-foreground">Loading testimonials…</div>
+        }
+      />
       {/* Quick Request Section (memoized & isolated to prevent page rerenders) */}
-      <QuickRequestSection />
+      <LazySection
+        loader={loadQuickRequestSection}
+        className="px-6 py-20"
+        fallback={
+          <div className="max-w-3xl mx-auto text-center text-muted-foreground">Preparing quick request form…</div>
+        }
+      />
 
       {/* Contact (lazy) */}
-      <div className="py-20 bg-surface">
-        <Suspense fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading contact…</div>}>
-          <ContactSection />
-        </Suspense>
-      </div>
+      <LazySection
+        loader={loadContactSection}
+        className="py-20 bg-surface"
+        fallback={<div className="max-w-7xl mx-auto px-6 text-muted-foreground">Loading contact…</div>}
+      />
 
       {/* New: Contract plans placed between Contact section and Footer */}
       <section id="contract-plans" className="px-6 py-20">

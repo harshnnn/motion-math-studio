@@ -39,7 +39,7 @@ const shippingSections = [
     id: "delivery-model",
     title: "Delivery Model",
     summary:
-      "Motion Math Studio ships digital experiences, not boxes. We orchestrate staged releases to keep stakeholders aligned and deployments safe.",
+      "AlgoVisuals ships digital experiences, not boxes. We orchestrate staged releases to keep stakeholders aligned and deployments safe.",
     bullets: [
       "Primary delivery is via secure download links and encrypted cloud folders.",
       "Production builds can be deployed directly to your infrastructure with temporary access credentials.",
@@ -130,7 +130,7 @@ const Shipping = () => (
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/90">Delivery excellence</p>
               <h1 className="text-4xl font-bold leading-tight sm:text-5xl">Shipping & Delivery</h1>
               <p className="max-w-xl text-lg text-muted-foreground">
-                The roadmap for how Motion Math Studio packages, reviews, and releases your projects—from first preview to
+                The roadmap for how AlgoVisuals packages, reviews, and releases your projects—from first preview to
                 production deployment.
               </p>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
