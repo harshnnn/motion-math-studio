@@ -47,7 +47,7 @@ const AdminLogin = () => {
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            Sign in to access the MathInMotion admin panel
+            Sign in to access the AlgoVisuals admin panel
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -33,7 +33,7 @@ const PaymentMethodsManager = () => {
       id: '2',
       type: 'paypal',
       name: 'PayPal Business',
-      details: 'business@mathinmotion.com',
+      details: 'contact@algovisuals.org',
       isActive: true,
       created_at: new Date().toISOString()
     },

@@ -473,7 +473,7 @@ const EnhancedDashboard = () => {
           <SidebarContent>
             <div className="p-4 border-b border-border/50">
               <h1 className="text-lg font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">MathInMotion</span>
+                <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">AlgoVisuals</span>
               </h1>
             </div>
             <SidebarGroup>

@@ -23,8 +23,8 @@ const AdminTeam = () => {
   const [teamMembers] = useState<TeamMember[]>([
     {
       id: '1',
-      name: 'Alex Chen',
-      email: 'alex@mathinmotion.com',
+      name: 'Harsh Ranjan',
+      email: 'contact@algovisuals.org',
       role: 'Senior Animator',
       specializations: ['2D Animation', '3D Modeling'],
       workload: 3,
@@ -34,8 +34,8 @@ const AdminTeam = () => {
     },
     {
       id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah@mathinmotion.com',
+      name: 'Abhishek Ranjan',
+      email: 'contact@algovisuals.org',
       role: 'Motion Graphics Designer',
       specializations: ['After Effects', 'Character Animation'],
       workload: 5,

@@ -15,7 +15,7 @@ const AdminSettings = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState({
     siteName: 'Math in Motion',
-    adminEmail: 'admin@mathinmotion.com',
+    adminEmail: 'contact@algovisuals.org',
     notificationsEnabled: true,
     autoAssignment: false,
     emailNotifications: true,
@@ -33,7 +33,7 @@ const AdminSettings = () => {
       companyName: 'Math in Motion',
       address: '123 Animation Street, Creative City, CC 12345',
       phone: '+1 (555) 123-4567',
-      website: 'https://mathinmotion.com',
+      website: 'https://www.algovisuals.org',
       taxId: 'TAX123456789'
     }
   });

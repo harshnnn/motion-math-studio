@@ -14,7 +14,7 @@ export const WhyChooseUs: React.FC = () => {
     <section className="px-6 py-20">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl lg:text-4xl font-bold mb-8 text-foreground text-center">
-          Why Choose MathInMotion
+          Why Choose AlgoVisuals
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {points.map((p, i) => (

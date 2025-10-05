@@ -109,7 +109,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-text bg-clip-text text-transparent">
-            MathInMotion
+            AlgoVisuals
           </h1>
           <p className="text-muted-foreground mt-2">
             Mathematical animations made simple
@@ -203,7 +203,7 @@ const Auth = () => {
               <TabsContent value="signup" className="space-y-4">
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>
-                  Join MathInMotion to start creating amazing mathematical animations
+                  Join AlgoVisuals to start creating amazing mathematical animations
                 </CardDescription>
                 
                 <form onSubmit={handleSignUp} className="space-y-4">
