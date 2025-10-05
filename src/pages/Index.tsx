@@ -78,9 +78,8 @@ const Index = () => {
                 <Button variant="hero-outline" size="lg" className="text-lg px-8 py-4" asChild>
                   <Link to="/request">Submit Request</Link>
                 </Button>
-                {/* New: Scroll to contract plans */}
                 <Button variant="outline" size="lg" className="text-lg px-8 py-4" asChild>
-                  <a href="#contract-plans">View Contract Plans</a>
+                  <Link to="/showcase">See Animation Showcase</Link>
                 </Button>
               </div>
             </div>

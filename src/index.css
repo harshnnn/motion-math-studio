@@ -15,7 +15,7 @@ All colors MUST be HSL.
     --surface-elevated: 240 9% 9%;
 
     /* Mathematical Brand Colors */
-    --primary: 264 83% 70%;          /* Mathematical purple */
+  --primary: 264 83% 60%;          /* Mathematical purple */
     --primary-foreground: 0 0% 98%;
     --primary-glow: 264 100% 80%;    /* Lighter for glow effects */
     
@@ -41,7 +41,7 @@ All colors MUST be HSL.
 
     --border: 240 6% 20%;
     --input: 240 6% 20%;
-    --ring: 264 83% 70%;
+  --ring: 264 83% 60%;
 
     /* Mathematical Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--accent)) 100%);

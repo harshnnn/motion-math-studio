@@ -18,6 +18,7 @@ const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const ContractRequestPage = lazy(() => import("@/pages/ContractRequestPage"));
 const ThankYouPage = lazy(() => import("@/pages/ThankYou"));
 const AlgorithmAnimationPage = lazy(() => import("@/pages/AlgorithmAnimation"));
+const ShowcasePage = lazy(() => import("@/pages/Showcase"));
 
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminLayoutShell = lazy(() => import("./components/admin/AdminLayout"));
@@ -67,6 +68,7 @@ const App = () => (
                   <Route path="/contract" element={<ContractRequestPage />} />
                   <Route path="/thank-you" element={<ThankYouPage />} />
                   <Route path="/algorithm-animation" element={<AlgorithmAnimationPage />} />
+                  <Route path="/showcase" element={<ShowcasePage />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin/login" element={<AdminLoginPage />} />

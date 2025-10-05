@@ -31,7 +31,7 @@ export const ContactSection = () => {
               </div>
               <div>
                 <div className="font-semibold">Email Discussion</div>
-                <div className="text-sm text-muted-foreground">hello@mathvisuals.dev</div>
+                <div className="text-sm text-muted-foreground">contact@algovisuals.org</div>
               </div>
             </div>
 
